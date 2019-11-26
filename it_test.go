@@ -19,6 +19,36 @@ func TestNewExpr(t *testing.T) {
 	it.Ok(t)
 }
 
+func TestImperativeKeywords(t *testing.T) {
+	mock := new(testing.T)
+
+	it.Ok(mock).If(1).Must().Assert(
+		func(be interface{}) bool { return be == 1 },
+	)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(2).MustNot().Assert(
+		func(be interface{}) bool { return be == 1 },
+	)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(1).Should().Assert(
+		func(be interface{}) bool { return be == 1 },
+	)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(2).ShouldNot().Assert(
+		func(be interface{}) bool { return be == 1 },
+	)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(1).May().Assert(
+		func(be interface{}) bool { return be == 1 },
+	)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+}
+
 func TestShouldAssert(t *testing.T) {
 	mock := new(testing.T)
 
@@ -156,14 +186,30 @@ func TestShouldBeIn(t *testing.T) {
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
 
-func TestShouldFailWith(t *testing.T) {
+func TestShouldInterceptPanic(t *testing.T) {
 	mock := new(testing.T)
 
-	failed := func() error { return errors.New("some") }
-	it.Ok(mock).If(failed).Should().Fail().With(errors.New("some"))
+	it.Ok(mock).
+		If(func() { panic(errors.New("emergency")) }).
+		Should().Intercept(errors.New("emergency"))
 	it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
-	success := func() error { return nil }
-	it.Ok(mock).If(success).Should().Fail().With(errors.New("some"))
+	it.Ok(mock).
+		If(func() {}).
+		Should().Intercept(errors.New("emergency"))
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+}
+
+func TestShouldInterceptError(t *testing.T) {
+	mock := new(testing.T)
+
+	it.Ok(mock).
+		If(func() error { return errors.New("error") }).
+		Should().Intercept(errors.New("error"))
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).
+		If(func() error { return nil }).
+		Should().Intercept(errors.New("error"))
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
