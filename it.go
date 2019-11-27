@@ -204,13 +204,6 @@ func (t Imperative) Be() Be {
 	return Be{t}
 }
 
-// Fail creates error handling asserts
-//   Should().Fail()
-// Intercept
-func (t Imperative) Fail() Fail {
-	return Fail{t}
-}
-
 //-----------------------------------------------------------------------------
 //
 // Comparison asserts
