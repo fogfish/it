@@ -9,224 +9,331 @@
 package it
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
 
-type expr struct {
+// Expr is a term of assert expression
+// See Ok keyword
+type Expr struct {
 	testing *testing.T
 }
 
-type actual struct {
-	expr  expr
+// Value is a term of assert expression
+// See If keyword
+type Value struct {
+	expr  Expr
 	value interface{}
 }
 
-type should struct {
-	actual actual
+// Imperative is a term of assert expression
+// See imperative keywords (Must, MustNot, Should, ShouldNot, May)
+type level int
+
+const (
+	lCRITICAL level = iota + 1
+	lERROR
+	lNOTICE
+)
+
+type Imperative struct {
+	actual  Value
+	success func(bool) bool
+	level   level
 }
 
-type be struct {
-	should should
+// Be is a term of assert expression
+// See Be keyword
+type Be struct {
+	imp Imperative
 }
 
-type fail struct {
-	should should
+// Fail is a term is assert expression
+// See Fail keyword
+type Fail struct {
+	imp Imperative
 }
 
+// Ok creates assertion expression, it takes a reference to
+// standard *testing.T interface to setup the evaluation context.
+func Ok(t *testing.T) Expr {
+	return Expr{t}
+}
+
+// If stashes an actual value for evaluation in further statements
+func (t Expr) If(x interface{}) Value {
+	return Value{t, x}
+}
+
+//-----------------------------------------------------------------------------
 //
-func Ok(t *testing.T) expr {
-	return expr{t}
+// Imperative keyword(s)
+//
+//-----------------------------------------------------------------------------
+
+// Must is imperative keyword.
+// The assert definition is an absolute requirement.
+// It terminates execution of tests if assert is false.
+func (t Value) Must() Imperative {
+	return Imperative{t, success, lCRITICAL}
 }
 
-//
-func (t expr) If(x interface{}) actual {
-	return actual{t, x}
+// MustNot is imperative keyword.
+// The assert definition is an absolute prohibition.
+// It terminates execution of tests if assert is true.
+func (t Value) MustNot() Imperative {
+	return Imperative{t, successNot, lCRITICAL}
 }
 
-//
-func (t actual) Should() should {
-	return should{t}
+// Should is imperative keyword.
+// The assert definition is a strongly recommended requirement.
+// However it's violation do not block continuation of testing.
+func (t Value) Should() Imperative {
+	return Imperative{t, success, lERROR}
 }
 
-//
-// Should
-//
+// ShouldNot is imperative keyword.
+// The assert definition is prohibited.
+// However it's violation do not block continuation of testing.
+func (t Value) ShouldNot() Imperative {
+	return Imperative{t, successNot, lERROR}
+}
 
-func (t should) Assert(f func(interface{}) bool) {
-	this(t).Helper()
+// May is an optional imperative constrain.
+// Its violation do not impact on testing flow in anyway.
+// The informative warning message is produced to console.
+// Error message will be printed only if the test fails or the -test.v
+func (t Value) May() Imperative {
+	return Imperative{t, success, lNOTICE}
+}
 
-	if !f(actualValue(t)) {
-		this(t).Errorf("assert is failed")
+func success(x bool) bool    { return x }
+func successNot(x bool) bool { return !x }
+
+//-----------------------------------------------------------------------------
+//
+// Asserts
+//
+//-----------------------------------------------------------------------------
+
+func (t Imperative) native() *testing.T {
+	return t.actual.expr.testing
+}
+
+func (t Imperative) error(msg string, args ...interface{}) {
+	t.actual.expr.testing.Helper()
+	switch t.level {
+	case lCRITICAL:
+		panic(fmt.Sprintf(msg, args...))
+	case lERROR:
+		t.actual.expr.testing.Errorf(msg, args...)
+	case lNOTICE:
+		t.actual.expr.testing.Logf(msg, args...)
 	}
 }
 
-func (t should) Equal(expect interface{}) {
-	this(t).Helper()
-
-	value := actualValue(t)
-	if !reflect.DeepEqual(value, expect) {
-		this(t).Errorf("%v not equal %v", value, expect)
-	}
+func (t Imperative) value() interface{} {
+	return t.actual.value
 }
 
-func (t should) Be() be {
-	return be{t}
-}
-
-func (t should) Fail() fail {
-	return fail{t}
-}
-
+// Assert with user-defined functions is a technique to define
+// arbitrary boolean expression. The stashed value is fed as
+// argument to the function. It fails if the function return
+// false.
 //
-func (t be) A(expect interface{}) {
-	this(t).Helper()
-
-	value := actualValue(t)
-	if !reflect.DeepEqual(value, expect) {
-		this(t).Errorf("%v not equal %v", value, expect)
-	}
-}
-
-func (t be) Like(expect interface{}) {
-	this(t).Helper()
-
-	value := actualValue(t)
-	if !kind(value, expect) {
-		this(t).Errorf("%v not same type like %v, type %T is required", value, expect, expect)
-	}
-}
-
+//   it.Ok(t).If(x).
+//     Should().Assert(func(be interface{}) bool {
+//	     (be > 1) && (be < 10) && (be != 5)
+//     })
 //
-//
-func (t be) Less(expect interface{}) {
-	this(t).Helper()
+func (t Imperative) Assert(f func(interface{}) bool) Expr {
+	t.native().Helper()
 
-	value := actualValue(t)
-	if !kind(value, expect) {
-		this(t).Errorf("%v not same type like %v, type %T is required", value, expect, expect)
-		return
+	value := t.value()
+	if !t.success(f(value)) {
+		t.error("assert is failed, unexpected value %v", value)
 	}
-	if reflect.DeepEqual(value, expect) {
-		this(t).Errorf("%v is equal %v", value, expect)
-		return
-	}
-	if !less(value, expect) {
-		this(t).Errorf("%v is not less then %v", value, expect)
-	}
+	return t.actual.expr
 }
 
-func (t be) LessOrEqual(expect interface{}) {
-	this(t).Helper()
+// Intercept catches any errors caused by the function under the test.
+// The assert fails if expected failure do not match.
+//
+//   it.Ok(t).If(refToCodeBlock).
+//      Should().Intercept(/* ... */)
+func (t Imperative) Intercept(err interface{}) Expr {
+	t.native().Helper()
 
-	value := actualValue(t)
-	if !kind(value, expect) {
-		this(t).Errorf("%v not same type like %v, type %T is required", value, expect, expect)
-		return
-	}
-	if !reflect.DeepEqual(value, expect) {
-		if !less(value, expect) {
-			this(t).Errorf("%v is not less or equal to %v", value, expect)
+	switch f := t.value().(type) {
+	case func() error:
+		value := f()
+		if !t.success(eq(value, err)) {
+			t.error("returns unexpected error %v, it requires %v", value, err)
 		}
+	case func():
+		defer func() {
+			value := recover()
+			if !t.success(eq(value, err)) {
+				t.error("returns unexpected error %v, it requires %v", value, err)
+			}
+		}()
+		f()
 	}
+
+	return t.actual.expr
 }
 
-func (t be) Greater(expect interface{}) {
-	this(t).Helper()
+// Equal compares left and right sides. The assert fails if they are not equal.
+//
+//  it.Ok(t).If(1).
+//    Should().Equal(1)
+func (t Imperative) Equal(expect interface{}) Expr {
+	t.native().Helper()
 
-	value := actualValue(t)
+	value := t.value()
+	if !t.success(eq(value, expect)) {
+		t.error("%v not equal %v", value, expect)
+	}
+	return t.actual.expr
+}
+
+// Be creates comparision asserts
+//   Should().Be()
+func (t Imperative) Be() Be {
+	return Be{t}
+}
+
+// Fail creates error handling asserts
+//   Should().Fail()
+// Intercept
+func (t Imperative) Fail() Fail {
+	return Fail{t}
+}
+
+//-----------------------------------------------------------------------------
+//
+// Comparision asserts
+//
+//-----------------------------------------------------------------------------
+
+// A matches expected values agains actual
+//   it.Ok(t).If(actual).Should().Be().A(expected)
+func (t Be) A(expect interface{}) Expr {
+	t.imp.native().Helper()
+
+	value := t.imp.value()
+	if !t.imp.success(eq(value, expect)) {
+		t.imp.error("%v not equal %v", value, expect)
+	}
+	return t.imp.actual.expr
+}
+
+// Like matches type of expected and actual values.
+// The assert fails if types are different.
+//   it.Ok(t).If(actual).Should().Be().Like(expected)
+func (t Be) Like(expect interface{}) Expr {
+	t.imp.native().Helper()
+
+	value := t.imp.value()
+	if !t.imp.success(kind(value, expect)) {
+		t.imp.error("%v not same type like %v, type %T is required", value, expect, expect)
+	}
+	return t.imp.actual.expr
+}
+
+// Less compares actual against expected value.
+//   it.Ok(t).If(actual).Should().Be().Less(expected)
+func (t Be) Less(expect interface{}) Expr {
+	t.imp.native().Helper()
+
+	value := t.imp.value()
 	if !kind(value, expect) {
-		this(t).Errorf("%v not same type like %v, type %T is required", value, expect, expect)
-		return
+		t.imp.error("%v not same type like %v, type %T is required", value, expect, expect)
+	} else if eq(value, expect) {
+		t.imp.error("%v is equal %v", value, expect)
+	} else if !t.imp.success(less(value, expect)) {
+		t.imp.error("%v is not less then %v", value, expect)
 	}
-	if reflect.DeepEqual(value, expect) {
-		this(t).Errorf("%v is equal %v", value, expect)
-		return
-	}
-	if less(value, expect) {
-		this(t).Errorf("%v is not greater then %v", value, expect)
-	}
+	return t.imp.actual.expr
 }
 
-func (t be) GreaterOrEqual(expect interface{}) {
-	this(t).Helper()
+// LessOrEqual compares actual against expected value.
+//   it.Ok(t).If(actual).Should().Be().LessOrEqual(expected)
+func (t Be) LessOrEqual(expect interface{}) Expr {
+	t.imp.native().Helper()
 
-	value := actualValue(t)
+	value := t.imp.value()
 	if !kind(value, expect) {
-		this(t).Errorf("%v not same type like %v, type %T is required", value, expect, expect)
-		return
+		t.imp.error("%v not same type like %v, type %T is required", value, expect, expect)
+	} else if !t.imp.success(eq(value, expect)) && !t.imp.success(less(value, expect)) {
+		t.imp.error("%v is not less or equal to %v", value, expect)
 	}
-
-	if !reflect.DeepEqual(value, expect) {
-		if less(value, expect) {
-			this(t).Errorf("%v is not greater or equal to %v", value, expect)
-		}
-	}
+	return t.imp.actual.expr
 }
 
-func (t be) In(a, b interface{}) {
-	this(t).Helper()
+// Greater compares actual against expected value.
+//   it.Ok(t).If(actual).Should().Be().Greater(expected)
+func (t Be) Greater(expect interface{}) Expr {
+	t.imp.native().Helper()
 
-	value := actualValue(t)
+	value := t.imp.value()
+	if !kind(value, expect) {
+		t.imp.error("%v not same type like %v, type %T is required", value, expect, expect)
+	} else if eq(value, expect) {
+		t.imp.error("%v is equal %v", value, expect)
+	} else if t.imp.success(less(value, expect)) {
+		t.imp.error("%v is not greater then %v", value, expect)
+	}
+	return t.imp.actual.expr
+}
+
+// GreaterOrEqual compares actual against expected value.
+//   it.Ok(t).If(actual).Should().Be().Greater(expected)
+func (t Be) GreaterOrEqual(expect interface{}) Expr {
+	t.imp.native().Helper()
+
+	value := t.imp.value()
+	if !kind(value, expect) {
+		t.imp.error("%v not same type like %v, type %T is required", value, expect, expect)
+	} else if !t.imp.success(eq(value, expect)) && t.imp.success(less(value, expect)) {
+		t.imp.error("%v is not greater or equal to %v", value, expect)
+	}
+	return t.imp.actual.expr
+}
+
+// In checks that actual value fits to range
+//   it.Ok(t).If(actual).Should().Be().In(from, to)
+func (t Be) In(a, b interface{}) Expr {
+	t.imp.native().Helper()
+
+	value := t.imp.value()
 	if !kind(value, a) {
-		this(t).Errorf("%v not same type like %v, type %T is required", value, a, a)
-		return
+		t.imp.error("%v not same type like %v, type %T is required", value, a, a)
+	} else if !kind(value, b) {
+		t.imp.error("%v not same type like %v, type %T is required", value, b, b)
+	} else if t.imp.success(less(value, a)) {
+		t.imp.error("%v is not greater then %v", value, a)
+	} else if !t.imp.success(less(value, b)) {
+		t.imp.error("%v is not less then %v", value, b)
 	}
-	if !kind(value, b) {
-		this(t).Errorf("%v not same type like %v, type %T is required", value, b, b)
-		return
-	}
-
-	if less(value, a) {
-		this(t).Errorf("%v is not greater then %v", value, a)
-		return
-	}
-	if !less(value, b) {
-		this(t).Errorf("%v is not less then %v", value, b)
-	}
+	return t.imp.actual.expr
 }
 
+//-----------------------------------------------------------------------------
 //
+// private helpers
 //
-func (t fail) With(expect error) {
-	this(t).Helper()
-
-	f := actualValue(t).(func() error)
-	value := f()
-	if !reflect.DeepEqual(value, expect) {
-		this(t).Errorf("returns unexpected error %v, it requires %v", value, expect)
-	}
-}
-
-//
-func actualValue(t interface{}) interface{} {
-	switch v := t.(type) {
-	case should:
-		return v.actual.value
-	case be:
-		return v.should.actual.value
-	case fail:
-		return v.should.actual.value
-	}
-	return nil
-}
-
-func this(t interface{}) *testing.T {
-	switch v := t.(type) {
-	case should:
-		return v.actual.expr.testing
-	case be:
-		return v.should.actual.expr.testing
-	case fail:
-		return v.should.actual.expr.testing
-	}
-	return nil
-}
+//-----------------------------------------------------------------------------
 
 func kind(x, y interface{}) bool {
 	xKind := reflect.ValueOf(x).Kind()
 	yKind := reflect.ValueOf(y).Kind()
 	return xKind == yKind
+}
+
+func eq(x, y interface{}) bool {
+	return reflect.DeepEqual(x, y)
 }
 
 func less(x, y interface{}) bool {
