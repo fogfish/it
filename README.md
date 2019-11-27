@@ -6,7 +6,7 @@ The library implements a human-friendly syntax for assertions to validates corre
 [![Build Status](https://secure.travis-ci.org/fogfish/it.svg?branch=master)](http://travis-ci.org/fogfish/it)
 [![Git Hub](https://img.shields.io/github/last-commit/fogfish/it.svg)](http://travis-ci.org/fogfish/it)
 [![Coverage Status](https://coveralls.io/repos/github/fogfish/it/badge.svg?branch=master)](https://coveralls.io/github/fogfish/it?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/fogfish/git)](https://goreportcard.com/report/github.com/fogfish/it)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fogfish/it)](https://goreportcard.com/report/github.com/fogfish/it)
 
 
 ## Inspiration
