@@ -27,8 +27,6 @@ type Value struct {
 	value interface{}
 }
 
-// Imperative is a term of assert expression
-// See imperative keywords (Must, MustNot, Should, ShouldNot, May)
 type level int
 
 const (
@@ -37,6 +35,8 @@ const (
 	lNOTICE
 )
 
+// Imperative is a term of assert expression
+// See imperative keywords (Must, MustNot, Should, ShouldNot, May)
 type Imperative struct {
 	actual  Value
 	success func(bool) bool
@@ -198,26 +198,19 @@ func (t Imperative) Equal(expect interface{}) Expr {
 	return t.actual.expr
 }
 
-// Be creates comparision asserts
+// Be creates comparison asserts
 //   Should().Be()
 func (t Imperative) Be() Be {
 	return Be{t}
 }
 
-// Fail creates error handling asserts
-//   Should().Fail()
-// Intercept
-func (t Imperative) Fail() Fail {
-	return Fail{t}
-}
-
 //-----------------------------------------------------------------------------
 //
-// Comparision asserts
+// Comparison asserts
 //
 //-----------------------------------------------------------------------------
 
-// A matches expected values agains actual
+// A matches expected values against actual
 //   it.Ok(t).If(actual).Should().Be().A(expected)
 func (t Be) A(expect interface{}) Expr {
 	t.imp.native().Helper()
