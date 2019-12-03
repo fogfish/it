@@ -198,6 +198,11 @@ func (t Imperative) Equal(expect interface{}) Expr {
 	return t.actual.expr
 }
 
+// Eq is an alias of Equal
+func (t Imperative) Eq(expect interface{}) Expr {
+	return t.Equal(expect)
+}
+
 // Be creates comparison asserts
 //   Should().Be()
 func (t Imperative) Be() Be {
@@ -220,6 +225,11 @@ func (t Be) A(expect interface{}) Expr {
 		t.imp.error("%v not equal %v", value, expect)
 	}
 	return t.imp.actual.expr
+}
+
+// Eq is an alias of A
+func (t Be) Eq(expect interface{}) Expr {
+	return t.A(expect)
 }
 
 // Like matches type of expected and actual values.
