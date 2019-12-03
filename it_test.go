@@ -73,6 +73,16 @@ func TestShouldEqual(t *testing.T) {
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
 
+func TestShouldEq(t *testing.T) {
+	mock := new(testing.T)
+
+	it.Ok(mock).If(1).Should().Eq(1)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(1).Should().Eq(2)
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+}
+
 func TestShouldBeA(t *testing.T) {
 	mock := new(testing.T)
 
@@ -80,6 +90,16 @@ func TestShouldBeA(t *testing.T) {
 	it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
 	it.Ok(mock).If(1).Should().Be().A(2)
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+}
+
+func TestShouldBeEq(t *testing.T) {
+	mock := new(testing.T)
+
+	it.Ok(mock).If(1).Should().Be().Eq(1)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(1).Should().Be().Eq(2)
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
 
