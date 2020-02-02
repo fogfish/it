@@ -208,28 +208,30 @@ func TestShouldBeIn(t *testing.T) {
 
 func TestShouldInterceptPanic(t *testing.T) {
 	mock := new(testing.T)
+	err := errors.New("emergency")
 
 	it.Ok(mock).
-		If(func() { panic(errors.New("emergency")) }).
-		Should().Intercept(errors.New("emergency"))
+		If(func() { panic(err) }).
+		Should().Intercept(err)
 	it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
 	it.Ok(mock).
 		If(func() {}).
-		Should().Intercept(errors.New("emergency"))
+		Should().Intercept(err)
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
 
 func TestShouldInterceptError(t *testing.T) {
 	mock := new(testing.T)
+	err := errors.New("error")
 
 	it.Ok(mock).
-		If(func() error { return errors.New("error") }).
-		Should().Intercept(errors.New("error"))
+		If(func() error { return err }).
+		Should().Intercept(err)
 	it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
 	it.Ok(mock).
 		If(func() error { return nil }).
-		Should().Intercept(errors.New("error"))
+		Should().Intercept(err)
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
