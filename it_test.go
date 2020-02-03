@@ -129,6 +129,21 @@ var pairs map[interface{}]interface{} = map[interface{}]interface{}{
 	"abcdef":     "bcdef",
 }
 
+var wrongtypes map[interface{}]interface{} = map[interface{}]interface{}{
+	int(1):       int8(10),
+	int8(1):      int16(10),
+	int16(1):     int32(10),
+	int32(1):     int64(10),
+	int64(1):     int(10),
+	uint(1):      uint8(10),
+	uint8(1):     uint16(10),
+	uint16(1):    uint32(10),
+	uint32(1):    uint64(10),
+	uint64(1):    uint(10),
+	float32(1.0): float64(10.0),
+	float64(1.0): float32(10.0),
+}
+
 func TestShouldBeLess(t *testing.T) {
 	for x, y := range pairs {
 		mock := new(testing.T)
@@ -137,6 +152,18 @@ func TestShouldBeLess(t *testing.T) {
 	}
 
 	for x, y := range pairs {
+		mock := new(testing.T)
+		it.Ok(mock).If(y).Should().Be().Less(x)
+		it.Ok(t).If(mock.Failed()).Should().Equal(true)
+	}
+
+	for _, y := range pairs {
+		mock := new(testing.T)
+		it.Ok(mock).If(y).Should().Be().Less(y)
+		it.Ok(t).If(mock.Failed()).Should().Equal(true)
+	}
+
+	for x, y := range wrongtypes {
 		mock := new(testing.T)
 		it.Ok(mock).If(y).Should().Be().Less(x)
 		it.Ok(t).If(mock.Failed()).Should().Equal(true)
@@ -161,6 +188,12 @@ func TestShouldBeLessOrEqual(t *testing.T) {
 		it.Ok(mock).If(y).Should().Be().LessOrEqual(x)
 		it.Ok(t).If(mock.Failed()).Should().Equal(true)
 	}
+
+	for x, y := range wrongtypes {
+		mock := new(testing.T)
+		it.Ok(mock).If(y).Should().Be().LessOrEqual(x)
+		it.Ok(t).If(mock.Failed()).Should().Equal(true)
+	}
 }
 
 func TestShouldBeGreater(t *testing.T) {
@@ -170,11 +203,24 @@ func TestShouldBeGreater(t *testing.T) {
 		it.Ok(t).If(mock.Failed()).Should().Equal(false)
 	}
 
+	for _, y := range pairs {
+		mock := new(testing.T)
+		it.Ok(mock).If(y).Should().Be().Greater(y)
+		it.Ok(t).If(mock.Failed()).Should().Equal(true)
+	}
+
 	for x, y := range pairs {
 		mock := new(testing.T)
 		it.Ok(mock).If(x).Should().Be().Greater(y)
 		it.Ok(t).If(mock.Failed()).Should().Equal(true)
 	}
+
+	for x, y := range wrongtypes {
+		mock := new(testing.T)
+		it.Ok(mock).If(y).Should().Be().Greater(x)
+		it.Ok(t).If(mock.Failed()).Should().Equal(true)
+	}
+
 }
 
 func TestShouldBeGreaterOrEqual(t *testing.T) {
@@ -195,6 +241,13 @@ func TestShouldBeGreaterOrEqual(t *testing.T) {
 		it.Ok(mock).If(x).Should().Be().GreaterOrEqual(y)
 		it.Ok(t).If(mock.Failed()).Should().Equal(true)
 	}
+
+	for x, y := range wrongtypes {
+		mock := new(testing.T)
+		it.Ok(mock).If(y).Should().Be().GreaterOrEqual(x)
+		it.Ok(t).If(mock.Failed()).Should().Equal(true)
+	}
+
 }
 
 func TestShouldBeIn(t *testing.T) {
@@ -204,32 +257,51 @@ func TestShouldBeIn(t *testing.T) {
 
 	it.Ok(mock).If(5).Should().Be().In(20, 30)
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+
+	it.Ok(mock).If(35).Should().Be().In(20, 30)
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+
+	it.Ok(mock).If(5).Should().Be().In(uint(20), uint(30))
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+
+	it.Ok(mock).If(5).Should().Be().In(20, uint(30))
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+
+	it.Ok(mock).If(5).Should().Be().In(uint(20), 30)
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
 
 func TestShouldInterceptPanic(t *testing.T) {
 	mock := new(testing.T)
+	err := errors.New("emergency")
 
 	it.Ok(mock).
-		If(func() { panic(errors.New("emergency")) }).
-		Should().Intercept(errors.New("emergency"))
+		If(func() { panic(err) }).
+		Should().Intercept(err)
 	it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
 	it.Ok(mock).
+		If(func() { panic(errors.New("other")) }).
+		Should().Intercept(err)
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+
+	it.Ok(mock).
 		If(func() {}).
-		Should().Intercept(errors.New("emergency"))
+		Should().Intercept(err)
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
 
 func TestShouldInterceptError(t *testing.T) {
 	mock := new(testing.T)
+	err := errors.New("error")
 
 	it.Ok(mock).
-		If(func() error { return errors.New("error") }).
-		Should().Intercept(errors.New("error"))
+		If(func() error { return err }).
+		Should().Intercept(err)
 	it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
 	it.Ok(mock).
 		If(func() error { return nil }).
-		Should().Intercept(errors.New("error"))
+		Should().Intercept(err)
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }

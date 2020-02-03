@@ -9,6 +9,7 @@
 package it
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -162,20 +163,24 @@ func (t Imperative) Assert(f func(interface{}) bool) Expr {
 //
 //   it.Ok(t).If(refToCodeBlock).
 //      Should().Intercept(/* ... */)
-func (t Imperative) Intercept(err interface{}) Expr {
+func (t Imperative) Intercept(err error) Expr {
 	t.native().Helper()
 
 	switch f := t.value().(type) {
 	case func() error:
 		value := f()
-		if !t.success(eq(value, err)) {
+		if !t.success(errors.Is(value, err)) {
 			t.error("returns unexpected error %v, it requires %v", value, err)
 		}
 	case func():
 		defer func() {
-			value := recover()
-			if !t.success(eq(value, err)) {
-				t.error("returns unexpected error %v, it requires %v", value, err)
+			switch value := recover().(type) {
+			case error:
+				if !t.success(errors.Is(value, err)) {
+					t.error("returns unexpected error %v, it requires %v", value, err)
+				}
+			default:
+				t.error("returns unexpected type %T %v", value, value)
 			}
 		}()
 		f()
