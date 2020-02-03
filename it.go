@@ -180,13 +180,42 @@ func (t Imperative) Intercept(err error) Expr {
 					t.error("returns unexpected error %v, it requires %v", value, err)
 				}
 			default:
-				t.error("returns unexpected type %T %v", value, value)
+				t.error("error type is expected, returns %T %v", value, value)
 			}
 		}()
 		f()
 	}
 
 	return t.actual.expr
+}
+
+// Fail catches any errors caused by the function under the test.
+// The assert fails if error is not nil.
+func (t Imperative) Fail() Expr {
+	t.native().Helper()
+
+	switch f := t.value().(type) {
+	case func() error:
+		value := f()
+		if !t.success(value != nil) {
+			t.error("successful, it requires an error")
+		}
+	case func():
+		defer func() {
+			switch value := recover().(type) {
+			case error:
+				if !t.success(value != nil) {
+					t.error("successful, it requires an error")
+				}
+			default:
+				t.error("error type is expected, returns %T %v", value, value)
+			}
+		}()
+		f()
+	}
+
+	return t.actual.expr
+
 }
 
 // Equal compares left and right sides. The assert fails if they are not equal.
