@@ -281,6 +281,11 @@ func TestShouldInterceptPanic(t *testing.T) {
 	it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
 	it.Ok(mock).
+		If(func() { panic(err) }).
+		Should().Fail()
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).
 		If(func() { panic(errors.New("other")) }).
 		Should().Intercept(err)
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
@@ -288,6 +293,11 @@ func TestShouldInterceptPanic(t *testing.T) {
 	it.Ok(mock).
 		If(func() {}).
 		Should().Intercept(err)
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+
+	it.Ok(mock).
+		If(func() {}).
+		Should().Fail()
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
 
@@ -301,7 +311,18 @@ func TestShouldInterceptError(t *testing.T) {
 	it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
 	it.Ok(mock).
+		If(func() error { return err }).
+		Should().Fail()
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).
 		If(func() error { return nil }).
 		Should().Intercept(err)
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+
+	it.Ok(mock).
+		If(func() error { return nil }).
+		Should().Fail()
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+
 }
