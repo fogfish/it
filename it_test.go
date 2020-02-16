@@ -78,6 +78,16 @@ func TestShouldEquiv(t *testing.T) {
 	a := "string"
 	b := "string"
 
+	type X struct {
+		a int
+		b *string
+	}
+	c := X{1, &a}
+	d := X{1, &b}
+
+	it.Ok(mock).If(nil).Should().Equiv(nil)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
 	it.Ok(mock).If(a).Should().Equiv(b)
 	it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
@@ -88,6 +98,18 @@ func TestShouldEquiv(t *testing.T) {
 	it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
 	it.Ok(mock).If(a).Should().Equiv(&b)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(c).Should().Equiv(d)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(&c).Should().Equiv(&d)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(c).Should().Equiv(&d)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(&c).Should().Equiv(d)
 	it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
 	it.Ok(mock).If(a).Should().Equal(&b)
