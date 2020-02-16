@@ -73,6 +73,53 @@ func TestShouldEqual(t *testing.T) {
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
 
+func TestShouldEquiv(t *testing.T) {
+	mock := new(testing.T)
+	a := "string"
+	b := "string"
+
+	type X struct {
+		a int
+		b *string
+	}
+	c := X{1, &a}
+	d := X{1, &b}
+
+	it.Ok(mock).If(nil).Should().Equiv(nil)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(a).Should().Equiv(b)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(&a).Should().Equiv(&b)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(&a).Should().Equiv(b)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(a).Should().Equiv(&b)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(c).Should().Equiv(d)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(&c).Should().Equiv(&d)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(c).Should().Equiv(&d)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(&c).Should().Equiv(d)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(a).Should().Equal(&b)
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+
+	it.Ok(mock).If(&a).Should().Equal(b)
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+}
+
+
 func TestShouldEq(t *testing.T) {
 	mock := new(testing.T)
 
