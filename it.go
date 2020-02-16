@@ -232,6 +232,21 @@ func (t Imperative) Equal(expect interface{}) Expr {
 	return t.actual.expr
 }
 
+// Equiv compares equivalence (same value) of left and right sides. 
+// The assert fails if they are not equal.
+//
+//  it.Ok(t).If(1).
+//    Should().Equal(1)
+func (t Imperative) Equiv(expect interface{}) Expr {
+	t.native().Helper()
+
+	value := t.value()
+	if !t.success(ev(value, expect)) {
+		t.error("%v not equal %v", value, expect)
+	}
+	return t.actual.expr
+}
+
 // Eq is an alias of Equal
 func (t Imperative) Eq(expect interface{}) Expr {
 	return t.Equal(expect)
@@ -369,8 +384,39 @@ func kind(x, y interface{}) bool {
 	return xKind == yKind
 }
 
-func eq(x, y interface{}) bool {
-	return reflect.DeepEqual(x, y)
+func eq(a, b interface{}) bool {
+	return reflect.DeepEqual(a, b)
+}
+
+func ev(a, b interface{}) bool {
+	if a == nil || b == nil {
+		return reflect.DeepEqual(a, b)
+	}
+
+	va := reflect.ValueOf(a)
+	vb := reflect.ValueOf(b)
+	if va.Kind() == reflect.Ptr && vb.Kind() == reflect.Ptr {
+		if !va.Elem().Type().Comparable() {
+			return false
+		}
+		return reflect.DeepEqual(va.Elem().Interface(), vb.Elem().Interface())
+	}
+
+	if va.Kind() == reflect.Ptr {
+		if !va.Elem().Type().Comparable() {
+			return false
+		}
+		return reflect.DeepEqual(va.Elem().Interface(), vb.Interface())
+	}
+
+	if vb.Kind() == reflect.Ptr {
+		if !vb.Elem().Type().Comparable() {
+			return false
+		}
+		return reflect.DeepEqual(va.Interface(), vb.Elem().Interface())
+	}
+
+	return reflect.DeepEqual(a, b)
 }
 
 func less(x, y interface{}) bool {

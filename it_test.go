@@ -73,6 +73,31 @@ func TestShouldEqual(t *testing.T) {
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
 
+func TestShouldEquiv(t *testing.T) {
+	mock := new(testing.T)
+	a := "string"
+	b := "string"
+
+	it.Ok(mock).If(a).Should().Equiv(b)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(&a).Should().Equiv(&b)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(&a).Should().Equiv(b)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(a).Should().Equiv(&b)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(a).Should().Equal(&b)
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+
+	it.Ok(mock).If(&a).Should().Equal(b)
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+}
+
+
 func TestShouldEq(t *testing.T) {
 	mock := new(testing.T)
 
