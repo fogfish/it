@@ -232,7 +232,7 @@ func (t Imperative) Equal(expect interface{}) Expr {
 	return t.actual.expr
 }
 
-// Equiv compares equivalence (same value) of left and right sides. 
+// Equiv compares equivalence (same value) of left and right sides.
 // The assert fails if they are not equal.
 //
 //  it.Ok(t).If(1).
@@ -385,6 +385,14 @@ func kind(x, y interface{}) bool {
 }
 
 func eq(a, b interface{}) bool {
+	// Note: reflect.DeepEqual uses type metadata to compare.
+	//       It would fail if nil value of pointer type is compared to nil literal
+	//       var v *MyType
+	//       it.Ok(t).If(v).Should().Equal(nil)
+	if a == nil && b == nil {
+		return true
+	}
+
 	return reflect.DeepEqual(a, b)
 }
 
