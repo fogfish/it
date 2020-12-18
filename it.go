@@ -384,12 +384,16 @@ func kind(x, y interface{}) bool {
 	return xKind == yKind
 }
 
+func isNul(a interface{}) bool {
+	return a == nil || (reflect.ValueOf(a).Kind() == reflect.Ptr && reflect.ValueOf(a).IsNil())
+}
+
 func eq(a, b interface{}) bool {
 	// Note: reflect.DeepEqual uses type metadata to compare.
 	//       It would fail if nil value of pointer type is compared to nil literal
 	//       var v *MyType
 	//       it.Ok(t).If(v).Should().Equal(nil)
-	if a == nil && b == nil {
+	if isNul(a) && isNul(b) {
 		return true
 	}
 
@@ -397,7 +401,7 @@ func eq(a, b interface{}) bool {
 }
 
 func ev(a, b interface{}) bool {
-	if a == nil || b == nil {
+	if isNul(a) || isNul(b) {
 		return reflect.DeepEqual(a, b)
 	}
 
