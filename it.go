@@ -279,7 +279,7 @@ func (t Imperative) Equiv(expect interface{}) Expr {
 
 	value := t.value()
 	if !t.success(ev(value, expect)) {
-		t.error("%v not equal %v", value, expect)
+		t.error("%v not equivalent to %v", value, expect)
 	}
 	return t.actual.expr
 }
