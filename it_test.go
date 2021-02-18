@@ -19,6 +19,28 @@ func TestNewExpr(t *testing.T) {
 	it.Ok(t)
 }
 
+func TestExprAliases(t *testing.T) {
+	mock := new(testing.T)
+
+	it.Ok(mock).IfTrue(true)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).IfFalse(false)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).IfNil(nil)
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).IfNotNil("xxx")
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If("xxx").Equal("xxx")
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If("xxx").NotEqual("yyy")
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+}
+
 func TestImperativeKeywords(t *testing.T) {
 	mock := new(testing.T)
 
@@ -46,7 +68,6 @@ func TestImperativeKeywords(t *testing.T) {
 		func(be interface{}) bool { return be == 1 },
 	)
 	it.Ok(t).If(mock.Failed()).Should().Equal(false)
-
 }
 
 func TestShouldAssert(t *testing.T) {
@@ -118,7 +139,6 @@ func TestShouldEquiv(t *testing.T) {
 	it.Ok(mock).If(&a).Should().Equal(b)
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
-
 
 func TestShouldEq(t *testing.T) {
 	mock := new(testing.T)
