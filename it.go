@@ -278,7 +278,8 @@ func (t Imperative) Equiv(expect interface{}) Expr {
 	t.native().Helper()
 
 	value := t.value()
-	if !t.success(ev(value, expect)) {
+	isEquiv := ev(value, expect)
+	if !t.success(isEquiv) {
 		t.error("%v not equivalent to %v", value, expect)
 	}
 	return t.actual.expr
