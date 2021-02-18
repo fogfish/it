@@ -67,6 +67,30 @@ func (t Expr) If(x interface{}) Value {
 	return Value{t, x}
 }
 
+// IfTrue is an alias to If().Should().Equal(true)
+func (t Expr) IfTrue(x bool) Expr {
+	t.testing.Helper()
+	return t.If(x).Should().Equal(true)
+}
+
+// IfFalse is an alias to If().Should().Equal(false)
+func (t Expr) IfFalse(x bool) Expr {
+	t.testing.Helper()
+	return t.If(x).Should().Equal(false)
+}
+
+// IfNil is an alias to If().Should().Equal(nil)
+func (t Expr) IfNil(x interface{}) Expr {
+	t.testing.Helper()
+	return t.If(x).Should().Equal(nil)
+}
+
+// IfNotNil is an alias to .Should().Equal(nil)
+func (t Expr) IfNotNil(x interface{}) Expr {
+	t.testing.Helper()
+	return t.If(x).ShouldNot().Equal(nil)
+}
+
 //-----------------------------------------------------------------------------
 //
 // Imperative keyword(s)
@@ -107,6 +131,18 @@ func (t Value) ShouldNot() Imperative {
 // Error message will be printed only if the test fails or the -test.v
 func (t Value) May() Imperative {
 	return Imperative{t, success, lNOTICE}
+}
+
+// Equal is an alias to .Should().Equal(true)
+func (t Value) Equal(expect interface{}) Expr {
+	t.expr.testing.Helper()
+	return t.Should().Equal(expect)
+}
+
+// NotEqual is an alias to .Should().Equal(true)
+func (t Value) NotEqual(expect interface{}) Expr {
+	t.expr.testing.Helper()
+	return t.ShouldNot().Equal(expect)
 }
 
 func success(x bool) bool    { return x }
@@ -218,7 +254,8 @@ func (t Imperative) Fail() Expr {
 
 }
 
-// Equal compares left and right sides. The assert fails if they are not equal.
+// Equal compares left and right sides. The assert fails if values and types
+// are not equal.
 //
 //  it.Ok(t).If(1).
 //    Should().Equal(1)
@@ -233,16 +270,17 @@ func (t Imperative) Equal(expect interface{}) Expr {
 }
 
 // Equiv compares equivalence (same value) of left and right sides.
-// The assert fails if they are not equal.
+// The assert fails if values are not equal but it relaxes types requirements
 //
 //  it.Ok(t).If(1).
-//    Should().Equal(1)
+//    Should().Equiv(1)
 func (t Imperative) Equiv(expect interface{}) Expr {
 	t.native().Helper()
 
 	value := t.value()
-	if !t.success(ev(value, expect)) {
-		t.error("%v not equal %v", value, expect)
+	isEquiv := ev(value, expect)
+	if !t.success(isEquiv) {
+		t.error("%v not equivalent to %v", value, expect)
 	}
 	return t.actual.expr
 }

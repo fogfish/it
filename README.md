@@ -2,11 +2,12 @@
 
 The library implements a human-friendly syntax for assertions to validates correctness of your code. It's style allows to write BDD-like specifications: "X should Y", "A equals to B", etc.
 
-[![Documentation](https://godoc.org/github.com/fogfish/it?status.svg)](http://godoc.org/github.com/fogfish/it)
-[![Build Status](https://secure.travis-ci.org/fogfish/it.svg?branch=master)](http://travis-ci.org/fogfish/it)
+[![Documentation](https://pkg.go.dev/badge/github.com/fogfish/it)](https://pkg.go.dev/github.com/fogfish/it)
+[![Build Status](https://github.com/fogfish/it/workflows/build/badge.svg)](https://github.com/fogfish/it/actions/)
 [![Git Hub](https://img.shields.io/github/last-commit/fogfish/it.svg)](http://travis-ci.org/fogfish/it)
 [![Coverage Status](https://coveralls.io/repos/github/fogfish/it/badge.svg?branch=master)](https://coveralls.io/github/fogfish/it?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fogfish/it)](https://goreportcard.com/report/github.com/fogfish/it)
+[![Maintainability](https://api.codeclimate.com/v1/badges/d685a9d909983da3d2da/maintainability)](https://codeclimate.com/github/fogfish/it/maintainability)
 
 
 ## Inspiration
