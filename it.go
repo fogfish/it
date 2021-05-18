@@ -417,8 +417,16 @@ func (t Be) In(a, b interface{}) Expr {
 //-----------------------------------------------------------------------------
 
 func kind(x, y interface{}) bool {
-	xKind := reflect.ValueOf(x).Kind()
-	yKind := reflect.ValueOf(y).Kind()
+	xKind := reflect.TypeOf(x).Name()
+	if reflect.ValueOf(x).Kind() == reflect.Ptr {
+		xKind = reflect.TypeOf(x).Elem().Name()
+	}
+
+	yKind := reflect.TypeOf(y).Name()
+	if reflect.ValueOf(y).Kind() == reflect.Ptr {
+		yKind = reflect.TypeOf(y).Elem().Name()
+	}
+
 	return xKind == yKind
 }
 

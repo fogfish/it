@@ -180,6 +180,40 @@ func TestShouldBeLike(t *testing.T) {
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
 
+func TestShouldBeLikeStruct(t *testing.T) {
+	mock := new(testing.T)
+
+	type A struct{ Name string }
+	type B struct{ Name string }
+
+	a := A{"test"}
+	b := B{"test"}
+
+	it.Ok(mock).If(a).Should().Be().Like(A{})
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(&a).Should().Be().Like(A{})
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(a).Should().Be().Like(&A{})
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(&a).Should().Be().Like(&A{})
+	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+
+	it.Ok(mock).If(b).Should().Be().Like(A{})
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+
+	it.Ok(mock).If(&b).Should().Be().Like(A{})
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+
+	it.Ok(mock).If(b).Should().Be().Like(&A{})
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+
+	it.Ok(mock).If(&b).Should().Be().Like(&A{})
+	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+}
+
 var pairs map[interface{}]interface{} = map[interface{}]interface{}{
 	int(1):       int(10),
 	int8(1):      int8(10),
