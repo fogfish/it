@@ -15,85 +15,115 @@ import (
 	"github.com/fogfish/it"
 )
 
+func TestZ(t *testing.T) {
+	it.OkZ(t).
+		// If(it.Equal(1, 3)).
+		Should(it.Equal(3, 3))
+	// Should(it.Nil("xxx")).
+	// Should(it.NotNil(nil)).
+	// Should(it.Less(8, 7)).
+	// Should(it.NotFail(func() {
+	// 	panic(fmt.Errorf("xx"))
+	// }))
+}
+
 func TestNewExpr(t *testing.T) {
-	it.Ok(t)
+	it.OkZ(t)
 }
 
 func TestExprAliases(t *testing.T) {
 	mock := new(testing.T)
 
-	it.Ok(mock).IfTrue(true)
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	// it.Ok(mock).IfTrue(true)
+	// it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
-	it.Ok(mock).IfFalse(false)
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	// it.Ok(mock).IfFalse(false)
+	// it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
-	it.Ok(mock).IfNil(nil)
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	// it.Ok(mock).IfNil(nil)
+	// it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
-	it.Ok(mock).IfNotNil("xxx")
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	// it.Ok(mock).IfNotNil("xxx")
+	// it.Ok(t).If(mock.Failed()).Should().Equal(false)
 
-	it.Ok(mock).If("xxx").Equal("xxx")
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	it.OkZ(mock).If(it.Equal("xxx", "xxx"))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 
-	it.Ok(mock).If("xxx").NotEqual("yyy")
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	it.OkZ(mock).If(it.NotEqual("xxx", "yyy"))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 }
 
 func TestImperativeKeywords(t *testing.T) {
+	success := func() error { return nil }
+	failure := func() error { return errors.New("fail") }
+
 	mock := new(testing.T)
+	it.OkZ(mock).Must(success())
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 
-	it.Ok(mock).If(1).Must().Assert(
-		func(be interface{}) bool { return be == 1 },
-	)
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	it.OkZ(t).If(it.Failed(
+		func() {
+			it.OkZ(mock).Must(failure())
+		},
+	))
 
-	it.Ok(mock).If(2).MustNot().Assert(
-		func(be interface{}) bool { return be == 1 },
-	)
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	mock = new(testing.T)
+	it.OkZ(mock).Should(success())
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 
-	it.Ok(mock).If(1).Should().Assert(
-		func(be interface{}) bool { return be == 1 },
-	)
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	mock = new(testing.T)
+	it.OkZ(mock).Should(failure())
+	it.OkZ(t).If(it.Is(mock.Failed))
 
-	it.Ok(mock).If(2).ShouldNot().Assert(
-		func(be interface{}) bool { return be == 1 },
-	)
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	mock = new(testing.T)
+	it.OkZ(mock).May(success())
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 
-	it.Ok(mock).If(1).May().Assert(
-		func(be interface{}) bool { return be == 1 },
-	)
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	mock = new(testing.T)
+	it.OkZ(mock).May(failure())
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 }
 
-func TestShouldAssert(t *testing.T) {
+func TestShouldLogicalExpression(t *testing.T) {
+	valid := func() bool { return true }
+	notvalid := func() bool { return false }
+
 	mock := new(testing.T)
+	it.OkZ(mock).If(it.Is(valid))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 
-	it.Ok(mock).If(1).Should().Assert(
-		func(be interface{}) bool { return be == 1 },
-	)
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.IsNot(valid))
+	it.OkZ(t).If(it.Is(mock.Failed))
 
-	it.Ok(mock).If(1).Should().Assert(
-		func(be interface{}) bool { return be == 2 },
-	)
-	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.Is(notvalid))
+	it.OkZ(t).If(it.Is(mock.Failed))
+
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.IsNot(notvalid))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 }
 
 func TestShouldEqual(t *testing.T) {
 	mock := new(testing.T)
+	it.OkZ(mock).If(it.Equal(1, 1))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 
-	it.Ok(mock).If(1).Should().Equal(1)
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.NotEqual(1, 1))
+	it.OkZ(t).If(it.Is(mock.Failed))
 
-	it.Ok(mock).If(1).Should().Equal(2)
-	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.Equal(1, 2))
+	it.OkZ(t).If(it.Is(mock.Failed))
+
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.NotEqual(1, 2))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 }
 
+/*
 func TestShouldEquiv(t *testing.T) {
 	mock := new(testing.T)
 	a := "string"
@@ -139,7 +169,9 @@ func TestShouldEquiv(t *testing.T) {
 	it.Ok(mock).If(&a).Should().Equal(b)
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
+*/
 
+/*
 func TestShouldEq(t *testing.T) {
 	mock := new(testing.T)
 
@@ -169,17 +201,18 @@ func TestShouldBeEq(t *testing.T) {
 	it.Ok(mock).If(1).Should().Be().Eq(2)
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
+*/
 
-func TestShouldBeLike(t *testing.T) {
+func TestShouldSameAs(t *testing.T) {
 	mock := new(testing.T)
+	it.OkZ(mock).If(it.SameAs(1, 0))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 
-	it.Ok(mock).If(1).Should().Be().Like(0)
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
-
-	it.Ok(mock).If(1).Should().Be().Like("")
-	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+	it.OkZ(mock).If(it.SameAs("abc", ""))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 }
 
+/*
 func TestShouldBeLikeStruct(t *testing.T) {
 	mock := new(testing.T)
 
@@ -213,7 +246,9 @@ func TestShouldBeLikeStruct(t *testing.T) {
 	it.Ok(mock).If(&b).Should().Be().Like(&A{})
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
+*/
 
+/*
 var pairs map[interface{}]interface{} = map[interface{}]interface{}{
 	int(1):       int(10),
 	int8(1):      int8(10),
@@ -244,113 +279,65 @@ var wrongtypes map[interface{}]interface{} = map[interface{}]interface{}{
 	float32(1.0): float64(10.0),
 	float64(1.0): float32(10.0),
 }
+*/
 
 func TestShouldBeLess(t *testing.T) {
-	for x, y := range pairs {
-		mock := new(testing.T)
-		it.Ok(mock).If(x).Should().Be().Less(y)
-		it.Ok(t).If(mock.Failed()).Should().Equal(false)
-	}
+	mock := new(testing.T)
+	it.OkZ(mock).If(it.Less(0, 1))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 
-	for x, y := range pairs {
-		mock := new(testing.T)
-		it.Ok(mock).If(y).Should().Be().Less(x)
-		it.Ok(t).If(mock.Failed()).Should().Equal(true)
-	}
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.Less(1, 1))
+	it.OkZ(t).If(it.Is(mock.Failed))
 
-	for _, y := range pairs {
-		mock := new(testing.T)
-		it.Ok(mock).If(y).Should().Be().Less(y)
-		it.Ok(t).If(mock.Failed()).Should().Equal(true)
-	}
-
-	for x, y := range wrongtypes {
-		mock := new(testing.T)
-		it.Ok(mock).If(y).Should().Be().Less(x)
-		it.Ok(t).If(mock.Failed()).Should().Equal(true)
-	}
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.Less(1, 0))
+	it.OkZ(t).If(it.Is(mock.Failed))
 }
 
 func TestShouldBeLessOrEqual(t *testing.T) {
-	for x, y := range pairs {
-		mock := new(testing.T)
-		it.Ok(mock).If(x).Should().Be().LessOrEqual(y)
-		it.Ok(t).If(mock.Failed()).Should().Equal(false)
-	}
+	mock := new(testing.T)
+	it.OkZ(mock).If(it.LessOrEqual(0, 1))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 
-	for _, y := range pairs {
-		mock := new(testing.T)
-		it.Ok(mock).If(y).Should().Be().LessOrEqual(y)
-		it.Ok(t).If(mock.Failed()).Should().Equal(false)
-	}
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.LessOrEqual(1, 1))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 
-	for x, y := range pairs {
-		mock := new(testing.T)
-		it.Ok(mock).If(y).Should().Be().LessOrEqual(x)
-		it.Ok(t).If(mock.Failed()).Should().Equal(true)
-	}
-
-	for x, y := range wrongtypes {
-		mock := new(testing.T)
-		it.Ok(mock).If(y).Should().Be().LessOrEqual(x)
-		it.Ok(t).If(mock.Failed()).Should().Equal(true)
-	}
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.LessOrEqual(1, 0))
+	it.OkZ(t).If(it.Is(mock.Failed))
 }
 
 func TestShouldBeGreater(t *testing.T) {
-	for x, y := range pairs {
-		mock := new(testing.T)
-		it.Ok(mock).If(y).Should().Be().Greater(x)
-		it.Ok(t).If(mock.Failed()).Should().Equal(false)
-	}
+	mock := new(testing.T)
+	it.OkZ(mock).If(it.Greater(0, 1))
+	it.OkZ(t).If(it.Is(mock.Failed))
 
-	for _, y := range pairs {
-		mock := new(testing.T)
-		it.Ok(mock).If(y).Should().Be().Greater(y)
-		it.Ok(t).If(mock.Failed()).Should().Equal(true)
-	}
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.Greater(1, 1))
+	it.OkZ(t).If(it.Is(mock.Failed))
 
-	for x, y := range pairs {
-		mock := new(testing.T)
-		it.Ok(mock).If(x).Should().Be().Greater(y)
-		it.Ok(t).If(mock.Failed()).Should().Equal(true)
-	}
-
-	for x, y := range wrongtypes {
-		mock := new(testing.T)
-		it.Ok(mock).If(y).Should().Be().Greater(x)
-		it.Ok(t).If(mock.Failed()).Should().Equal(true)
-	}
-
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.Greater(1, 0))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 }
 
 func TestShouldBeGreaterOrEqual(t *testing.T) {
-	for x, y := range pairs {
-		mock := new(testing.T)
-		it.Ok(mock).If(y).Should().Be().GreaterOrEqual(x)
-		it.Ok(t).If(mock.Failed()).Should().Equal(false)
-	}
+	mock := new(testing.T)
+	it.OkZ(mock).If(it.GreaterOrEqual(0, 1))
+	it.OkZ(t).If(it.Is(mock.Failed))
 
-	for _, y := range pairs {
-		mock := new(testing.T)
-		it.Ok(mock).If(y).Should().Be().GreaterOrEqual(y)
-		it.Ok(t).If(mock.Failed()).Should().Equal(false)
-	}
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.GreaterOrEqual(1, 1))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 
-	for x, y := range pairs {
-		mock := new(testing.T)
-		it.Ok(mock).If(x).Should().Be().GreaterOrEqual(y)
-		it.Ok(t).If(mock.Failed()).Should().Equal(true)
-	}
-
-	for x, y := range wrongtypes {
-		mock := new(testing.T)
-		it.Ok(mock).If(y).Should().Be().GreaterOrEqual(x)
-		it.Ok(t).If(mock.Failed()).Should().Equal(true)
-	}
-
+	mock = new(testing.T)
+	it.OkZ(mock).If(it.GreaterOrEqual(1, 0))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 }
 
+/*
 func TestShouldBeIn(t *testing.T) {
 	mock := new(testing.T)
 	it.Ok(mock).If(5).Should().Be().In(0, 10)
@@ -371,37 +358,49 @@ func TestShouldBeIn(t *testing.T) {
 	it.Ok(mock).If(5).Should().Be().In(uint(20), 30)
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 }
+*/
 
-func TestShouldInterceptPanic(t *testing.T) {
-	mock := new(testing.T)
+func TestShouldFailedWithPanic(t *testing.T) {
 	err := errors.New("emergency")
 
-	it.Ok(mock).
-		If(func() { panic(err) }).
-		Should().Intercept(err)
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	mock := new(testing.T)
+	it.OkZ(mock).Should(it.Failed(func() { panic(err) }))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 
-	it.Ok(mock).
-		If(func() { panic(err) }).
-		Should().Fail()
-	it.Ok(t).If(mock.Failed()).Should().Equal(false)
+	mock = new(testing.T)
+	it.OkZ(mock).Should(it.Failed(func() {}))
+	it.OkZ(t).If(it.Is(mock.Failed))
 
-	it.Ok(mock).
-		If(func() { panic(errors.New("other")) }).
-		Should().Intercept(err)
-	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+	mock = new(testing.T)
+	it.OkZ(mock).Should(it.NotFailed(func() { panic(err) }))
+	it.OkZ(t).If(it.Is(mock.Failed))
 
-	it.Ok(mock).
-		If(func() {}).
-		Should().Intercept(err)
-	it.Ok(t).If(mock.Failed()).Should().Equal(true)
-
-	it.Ok(mock).
-		If(func() {}).
-		Should().Fail()
-	it.Ok(t).If(mock.Failed()).Should().Equal(true)
+	mock = new(testing.T)
+	it.OkZ(mock).Should(it.NotFailed(func() {}))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
 }
 
+func TestShouldFailedWithError(t *testing.T) {
+	err := errors.New("emergency")
+
+	mock := new(testing.T)
+	it.OkZ(mock).Should(it.Failed(func() error { return err }))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
+
+	mock = new(testing.T)
+	it.OkZ(mock).Should(it.Failed(func() error { return nil }))
+	it.OkZ(t).If(it.Is(mock.Failed))
+
+	mock = new(testing.T)
+	it.OkZ(mock).Should(it.NotFailed(func() error { return err }))
+	it.OkZ(t).If(it.Is(mock.Failed))
+
+	mock = new(testing.T)
+	it.OkZ(mock).Should(it.NotFailed(func() error { return nil }))
+	it.OkZ(t).If(it.IsNot(mock.Failed))
+}
+
+/*
 func TestShouldInterceptError(t *testing.T) {
 	mock := new(testing.T)
 	err := errors.New("error")
@@ -427,3 +426,4 @@ func TestShouldInterceptError(t *testing.T) {
 	it.Ok(t).If(mock.Failed()).Should().Equal(true)
 
 }
+*/

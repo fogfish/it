@@ -15,6 +15,71 @@ import (
 	"testing"
 )
 
+//
+// Imperatives
+//
+
+// Check type is constructor of imperative testing expressions.
+//   it.Ok(t).Should( ... )
+type Check struct {
+	t *testing.T // Note: intentionally hidden from clients
+}
+
+// Ok creates assertion expression, it takes a reference to
+// standard *testing.T interface to setup the evaluation context.
+func OkZ(t *testing.T) *Check { return &Check{t} }
+
+// Must is imperative keyword.
+// The assert definition is an absolute requirement.
+// It terminates execution of tests if assert is false.
+func (check *Check) Must(err error) *Check {
+	check.t.Helper()
+	if err != nil {
+		panic(fmt.Errorf("must %w", err))
+	}
+	return check
+}
+
+// Should is imperative keyword.
+// The assert definition is a strongly recommended requirement.
+// However it's violation do not block continuation of testing.
+func (check *Check) Should(err error) *Check {
+	check.t.Helper()
+	if err != nil {
+		check.t.Errorf("should %s", err)
+	}
+	return check
+}
+
+// If is imperative keyword, alias to Should
+func (check *Check) If(err error) *Check {
+	check.t.Helper()
+	if err != nil {
+		check.t.Errorf("if %s", err)
+	}
+	return check
+}
+
+// May is an optional imperative constrain.
+// Its violation do not impact on testing flow in anyway.
+// The informative warning message is produced to console.
+// Error message will be printed only if the test fails or the -test.v
+func (check *Check) May(err error) *Check {
+	check.t.Helper()
+	if err != nil {
+		check.t.Logf("may %s", err)
+	}
+	return check
+}
+
+//
+// Asserts
+//
+
+//
+// Matchers
+//
+
 // Expr is a term of assert expression
 // See Ok keyword
 type Expr struct {
@@ -174,6 +239,8 @@ func (t Imperative) value() interface{} {
 	return t.actual.value
 }
 
+// ==> it.Should( func() error {} )
+
 // Assert with user-defined functions is a technique to define
 // arbitrary boolean expression. The stashed value is fed as
 // argument to the function. It fails if the function return
@@ -193,6 +260,8 @@ func (t Imperative) Assert(f func(interface{}) bool) Expr {
 	}
 	return t.actual.expr
 }
+
+// ==> it.NotFail
 
 // Intercept catches any errors caused by the function under the test.
 // The assert fails if expected failure do not match.
@@ -225,6 +294,8 @@ func (t Imperative) Intercept(err error) Expr {
 	return t.actual.expr
 }
 
+// ==> TBD
+
 // Fail catches any errors caused by the function under the test.
 // The assert fails if error is not nil.
 func (t Imperative) Fail() Expr {
@@ -254,6 +325,8 @@ func (t Imperative) Fail() Expr {
 
 }
 
+// ==> it.Equal
+
 // Equal compares left and right sides. The assert fails if values and types
 // are not equal.
 //
@@ -268,6 +341,8 @@ func (t Imperative) Equal(expect interface{}) Expr {
 	}
 	return t.actual.expr
 }
+
+// ==> TBD
 
 // Equiv compares equivalence (same value) of left and right sides.
 // The assert fails if values are not equal but it relaxes types requirements
@@ -284,6 +359,8 @@ func (t Imperative) Equiv(expect interface{}) Expr {
 	}
 	return t.actual.expr
 }
+
+// ==> it.Equal
 
 // Eq is an alias of Equal
 func (t Imperative) Eq(expect interface{}) Expr {
@@ -302,6 +379,8 @@ func (t Imperative) Be() Be {
 //
 //-----------------------------------------------------------------------------
 
+// ==> it.Equal
+
 // A matches expected values against actual
 //   it.Ok(t).If(actual).Should().Be().A(expected)
 func (t Be) A(expect interface{}) Expr {
@@ -314,10 +393,14 @@ func (t Be) A(expect interface{}) Expr {
 	return t.imp.actual.expr
 }
 
+// ==> it.Equal
+
 // Eq is an alias of A
 func (t Be) Eq(expect interface{}) Expr {
 	return t.A(expect)
 }
+
+// ==> it.SameAs
 
 // Like matches type of expected and actual values.
 // The assert fails if types are different.
@@ -331,6 +414,8 @@ func (t Be) Like(expect interface{}) Expr {
 	}
 	return t.imp.actual.expr
 }
+
+// ==> it.Less
 
 // Less compares actual against expected value.
 //   it.Ok(t).If(actual).Should().Be().Less(expected)
@@ -348,6 +433,8 @@ func (t Be) Less(expect interface{}) Expr {
 	return t.imp.actual.expr
 }
 
+// ==> it.LessOrEqual
+
 // LessOrEqual compares actual against expected value.
 //   it.Ok(t).If(actual).Should().Be().LessOrEqual(expected)
 func (t Be) LessOrEqual(expect interface{}) Expr {
@@ -361,6 +448,8 @@ func (t Be) LessOrEqual(expect interface{}) Expr {
 	}
 	return t.imp.actual.expr
 }
+
+// ==> it.Greater
 
 // Greater compares actual against expected value.
 //   it.Ok(t).If(actual).Should().Be().Greater(expected)
@@ -378,6 +467,8 @@ func (t Be) Greater(expect interface{}) Expr {
 	return t.imp.actual.expr
 }
 
+// ==> it.GreaterOrEqual
+
 // GreaterOrEqual compares actual against expected value.
 //   it.Ok(t).If(actual).Should().Be().Greater(expected)
 func (t Be) GreaterOrEqual(expect interface{}) Expr {
@@ -391,6 +482,8 @@ func (t Be) GreaterOrEqual(expect interface{}) Expr {
 	}
 	return t.imp.actual.expr
 }
+
+// ==> it.Less + it.Greater
 
 // In checks that actual value fits to range
 //   it.Ok(t).If(actual).Should().Be().In(from, to)
