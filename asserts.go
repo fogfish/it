@@ -1,71 +1,175 @@
 package it
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"runtime"
+	"strings"
 )
 
-// Is assert logical expression to the truth
-//   it.Should(it.True(myPredicate))
-func Is(f func() bool) error {
+//
+// Assertions
+//
+
+// Be assert logical predicated to the truth
+//   it.Should(it.Be(myPredicate))
+func Be(f func() bool) error {
+	fn := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+	assert := fmt.Errorf("predicate %s be true", fn)
+
 	if !f() {
-		name := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
-		return fmt.Errorf("%s be true", name)
+		return assert
 	}
-	return nil
+	return passed(assert)
 }
 
-// IsNot assert logical expression to the false
-//   it.Should(it.False(myPredicate))
-func IsNot(f func() bool) error {
-	if f() {
-		name := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
-		return fmt.Errorf("not %s be true", name)
-	}
-	return nil
-}
+// True assert results of logical predicated to be true
+//  it.Should(it.True( cnt > 10 ))
+func True(x bool) error {
+	assert := errors.New("be true")
 
-// Nil asserts the variable for undefined clause
-//   it.Ok(t).Should(it.Nil(x))
-func Nil(x interface{}) error {
-	if x != nil {
-		return fmt.Errorf("not %v be defined", x)
+	if !x {
+		return assert
 	}
-	return nil
-}
-
-// NotNil asserts the variable for undefined clause
-//   it.Ok(t).Should(it.NotNil(x))
-func NotNil(x interface{}) error {
-	if x == nil {
-		return fmt.Errorf("not be %v", x)
-	}
-	return nil
+	return passed(assert)
 }
 
 // SameAs matches type of x, y
-//   it.Ok(t).Should(it.SameAs(x, y))
+//   it.Should(it.SameAs(x, y))
 func SameAs[T any](x, y T) error {
 	return nil
 }
 
-// Equal check equality (x = y) of two scalar variables
-//   it.Ok(t).Should(it.Equal(x, y))
-func Equal[T comparable](x, y T) error {
-	if x != y {
-		return fmt.Errorf("%v be equal to %v", x, y)
+// Nil asserts the variable for the nil value
+//   it.Should(it.Nil(x))
+func Nil(x interface{}) error {
+	if x != nil {
+		return fmt.Errorf("value [%v] be defined", x)
 	}
-	return nil
+	return passed(fmt.Errorf("nil value"))
 }
 
-// NotEqual check not equality (x != y) of two scalar variables
-//   it.Ok(t).Should(it.NotEqual(x, y))
-func NotEqual[T comparable](x, y T) error {
-	if x == y {
-		return fmt.Errorf("not %v be equal to %v", x, y)
+//
+// Intercepts
+//
+
+// Callable type constraint for scope of Intercepts
+type Callable interface {
+	~func() error | ~func()
+}
+
+// Fail catches any errors caused by the function under the test.
+//   it.Should(it.Fail(refToCodeBlock))
+func Fail[T Callable](f T) FailIt {
+	switch ff := any(f).(type) {
+	case func() error:
+		return failWithError(ff)
+	case func():
+		return failWithPanic(ff)
+	default:
+		panic("runtime error")
 	}
-	return nil
+}
+
+//
+func failWithError(f func() error) FailIt {
+	fn := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+	assert := fmt.Errorf("%s return error", fn)
+
+	err := f()
+	if err == nil {
+		return FailIt{assert, nil}
+	}
+
+	return FailIt{passed(assert), err}
+}
+
+//
+func failWithPanic(f func()) FailIt {
+	fn := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+	assert := fmt.Errorf("%s panic", fn)
+
+	err := func() (err error) {
+		defer func() {
+			switch r := recover().(type) {
+			case nil:
+			case error:
+				err = r
+			default:
+				err = fmt.Errorf("%v", r)
+			}
+		}()
+		f()
+		return
+	}()
+
+	if err == nil {
+		return FailIt{assert, nil}
+	}
+
+	return FailIt{passed(assert), err}
+}
+
+// FailIt extend Fail assert
+type FailIt struct {
+	assert error
+	status error
+}
+
+func (x FailIt) Error() string      { return x.assert.Error() }
+func (x FailIt) As(target any) bool { return errors.As(x.assert, target) }
+
+// With asserts failure to the expected error
+//   it.Should(it.Fail(refToCodeBlock).With(&notFound))
+func (x FailIt) With(y any) error {
+	assert := fmt.Errorf("%s with %T", x.assert, y)
+
+	if !errors.As(x.status, y) {
+		return assert
+	}
+
+	return passed(assert)
+}
+
+// Contain asserts error string for expected term
+//   it.Should(it.Fail(refToCodeBlock).Contain("not found"))
+func (x FailIt) Contain(y string) error {
+	assert := fmt.Errorf("%s contain %s", x.assert, y)
+
+	if !strings.Contains(x.status.Error(), y) {
+		return assert
+	}
+
+	return passed(assert)
+}
+
+// Error checks return values of function on the error cases
+//   it.Should(it.Error(refToCodeBlock()))
+func Error[A any](x A, err error) FailIt {
+	assert := errors.New("return error")
+
+	if err == nil {
+		return FailIt{assert, nil}
+	}
+
+	assert = fmt.Errorf("return error [%w]", err)
+	return FailIt{passed(assert), err}
+}
+
+//
+// Equality and Identity
+//
+
+// Equal check equality (x = y) of two scalar variables
+//   it.Should(it.Equal(x, y))
+func Equal[T comparable](x, y T) error {
+	assert := fmt.Errorf("%v be equal to %v", x, y)
+
+	if x != y {
+		return assert
+	}
+	return passed(assert)
 }
 
 // Orderable type constraint
@@ -76,104 +180,63 @@ type Orderable interface {
 		~float32 | ~float64
 }
 
-// Less compares (x < y) of two scalar variables
-//   it.Ok(t).Should(it.Less(x, y))
+// Less compares (x < y) two scalar variables
+//   it.Should(it.Less(x, y))
 func Less[T Orderable](x, y T) error {
+	assert := fmt.Errorf("%v be less than %v", x, y)
 	if !(x < y) {
-		return fmt.Errorf("%v be less than %v", x, y)
+		return assert
 	}
-	return nil
+	return passed(assert)
 }
 
-// Less compares (x <= y) of two scalar variables
-//   it.Ok(t).Should(it.LessOrEqual(x, y))
+// Less compares (x <= y) two scalar variables
+//   it.Should(it.LessOrEqual(x, y))
 func LessOrEqual[T Orderable](x, y T) error {
+	assert := fmt.Errorf("%v be less or equal to %v", x, y)
+
 	if !(x <= y) {
-		return fmt.Errorf("%v be less or equal to %v", x, y)
+		return assert
 	}
-	return nil
+	return passed(assert)
 }
 
 // Greater compares (x > y) of two scalar variables
-//   it.Ok(t).Should(it.Greater(x, y))
+//   it.Should(it.Greater(x, y))
 func Greater[T Orderable](x, y T) error {
+	assert := fmt.Errorf("%v be greater than %v", x, y)
 	if !(x > y) {
-		return fmt.Errorf("%v be greater than %v", x, y)
+		return assert
 	}
-	return nil
+	return passed(assert)
 }
 
 // Greater compares (x >= y) of two scalar variables
-//   it.Ok(t).Should(it.GreaterOrEqual(x, y))
+//   it.Should(it.GreaterOrEqual(x, y))
 func GreaterOrEqual[T Orderable](x, y T) error {
+	assert := fmt.Errorf("%v be greater or equal to %v", x, y)
 	if !(x >= y) {
-		return fmt.Errorf("%v be greater or equal to %v", x, y)
+		return assert
 	}
-	return nil
+	return passed(assert)
 }
 
-// Callable type constraint
-type Callable interface {
-	~func() error | ~func()
+//
+// Non public asserts
+//
+
+func isNul(a interface{}) bool {
+	return a == nil || (reflect.ValueOf(a).Kind() == reflect.Ptr && reflect.ValueOf(a).IsNil())
 }
 
-// NotFail catches any errors caused by the function under the test.
-//   it.Ok(t).Should(it.NotFail(refToCodeBlock))
-func Failed[T Callable](f T) error {
-	name := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
-	switch ff := any(f).(type) {
-	case func() error:
-		if err := ff(); err == nil {
-			return fmt.Errorf("%s fail", name)
-		}
-	case func():
-		err := func() (err error) {
-			defer func() {
-				if r := recover(); r != nil {
-					err = fmt.Errorf("%v", r)
-				}
-			}()
-			ff()
-			return
-		}()
-		if err == nil {
-			return fmt.Errorf("%s fail", name)
-		}
+func equal(a, b interface{}) bool {
+	// Note: reflect.DeepEqual uses type metadata to compare.
+	//       It would fail if nil value of pointer type is compared to nil literal
+	//       var v *MyType
+	//       it.Ok(t).If(v).Should().Equal(nil)
+	if isNul(a) && isNul(b) {
+		return true
 	}
-	return nil
-}
 
-// NotFailed catches any errors caused by the function under the test.
-//   it.Ok(t).Should(it.NotFail(refToCodeBlock))
-func NotFailed[T Callable](f T) error {
-	name := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
-	switch ff := any(f).(type) {
-	case func() error:
-		if err := ff(); err != nil {
-			return fmt.Errorf("not %s fail with %w", name, err)
-		}
-	case func():
-		err := func() (err error) {
-			defer func() {
-				if r := recover(); r != nil {
-					err = fmt.Errorf("%v", r)
-				}
-			}()
-			ff()
-			return
-		}()
-		if err != nil {
-			return fmt.Errorf("not %s fail with %w", name, err)
-		}
-	}
-	return nil
-}
-
-// NoError checks return values of function on the error cases
-//   it.Ok(t).Should(it.NoError(callMySut()))
-func NoError[A any](x A, err error) error {
-	if err != nil {
-		return fmt.Errorf("not fail with %w", err)
-	}
-	return nil
+	return reflect.DeepEqual(a, b)
 }

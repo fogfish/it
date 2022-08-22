@@ -12,100 +12,202 @@ The library implements a human-friendly syntax for assertions to validates corre
 
 ## Inspiration
 
-This library is heavily inspired by features of [ScalaTest](http://www.scalatest.org). It tries to adapt similar syntax for Golang. There is a vision that change of code style in testing helps developers to "switch gears". It's sole purpose to write unit tests assertions in natural language.
+There is a vision that change of code style in testing helps developers to "switch gears". It's sole purpose to write unit tests assertions in natural language. The library is inspired by features of [ScalaTest](http://www.scalatest.org) and tries to adapt similar syntax for Golang. 
 
 ```
-It Ok If /* actual */ Should /* expected */
+It Should /* actual */ Be /* expected */
 
-It Ok If x Should Equal 5
-It Ok If x Should Not Less 5
-It Ok If x Must Less 5
+It Should X Equal Y
+It Should X Less Y
+It Should String X Contain Y
+It Should Seq X Equal Y¹, ... Yⁿ
 ```
 
-## Key features
+The approximation of the style into Golang syntax:
 
-* assertions with user defined functions
-* intercept failures
-* check equality
-* makes comparison and range checks
-* type checks
-* match failures and error to given type
-* imperative keyword as defined by RFC 2119
-* composition/chaining of assertions
-
+```go
+it.Then(t).
+  Should(it.Equal(x, y)).
+  Should(it.Less(x, y)).
+  Should(it.String(x).Contain(y)).
+  Should(it.Seq(x).Equal(/* ... */))
+```
 
 ## Getting Started
 
-The latest version of the library is available at its `master` branch. All development, including new features and bug fixes, take place on the `master` branch using forking and pull requests as described in contribution guidelines.
+- [Getting Started](#getting-started)
+  - [Style](#style)
+  - [Assertions](#assertions)
+  - [Intercepts](#intercepts)
+  - [Equality and identity](#equality-and-identity)
+  - [Ordering](#ordering)
+  - [String matchers](#string-matchers)
+  - [Slices and Sequence matchers](#slices-and-sequence-matchers)
+  - [Map matchers](#map-matchers)
 
-Import the library in your code
+The latest version of the library is available at its `main` branch. All development, including new features and bug fixes, take place on the `main` branch using forking and pull requests as described in contribution guidelines. The stable version is available via Golang modules.
+
+1. Use `go get` to retrieve the library and add it as dependency to your application.
+
+```bash
+go get -u github.com/fogfish/it
+```
+
+2. Import it in your unit tests
 
 ```go
 import (
   "github.com/fogfish/it"
 )
-
-func TestMyFeature(t *testing.T) {
-  it.Ok(t).
-    If(myfeature()).Should().Equal(5).
-    If(myfeature()).Should().Be().Less(10)
-}
-
-func myfeature() int {
-  return 5
-}
 ```
 
 See the [go doc](http://godoc.org/github.com/fogfish/it) for api spec.
 
 
-## Syntax at Glance
+### Style
 
-Each assertion begins with phrase: 
+The coding style is like standard Golang unit tests but assert are written as a chain of asserts in a specification style: "X should Y," "A must B," etc.
 
 ```go
 func TestMyFeature(t *testing.T) {
-  it.Ok(t).If(/*...*/)
+  /* Given */
+  /*  ...  */
+
+  /* When  */
+  /*  ...  */
+
+  it.Then(t).
+    Should(/* X Equal Y */).
+    Should(/* String X Contain Y */)
 }
 ```
 
-Then, it continues with one of imperative keyword as defined by [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt)  :
-* `Must` the definition is an absolute requirement.
-* `MustNot` the definition is an absolute prohibition.
-* `Should` the definition is a strongly recommended requirement, however it's violation do not block continuation of testing.
-* `ShouldNot` the definition is prohibited, however it's violation do not block continuation of testing.
-* `May` is an optional constrain, its violation do not impact on testing flow in anyway.
+The library support 3 imperative keyword `Must`, `Should` and `May` as defined by [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt). Its prohibition variants `MustNot`, `ShouldNot` and `May`. 
 
-The library provides a rich set of asserts 
+Use the `Skip` imperative keyword to ignore the assert and its result.
+
+
+### Assertions
+
+A first order logic expression asserts the result of unit test.
 
 ```go
-// Assertions with user-defined functions
-it.Ok(t).If(three).
-  Should().Assert(func(be interface{}) bool {
-      (be > 1) && (be < 10) && (be != 5)
-  })
-
-// Intercept any failures in target features
-it.Ok(t).If(refToCodeBlock).
-  Should().Intercept(/* ... */)
-
-// Matches equality and identity
-it.Ok(t).
-  If(one).Should().Equal(1).
-  If(one).Should().Be().A(1)
-
-// Matches type
-it.Ok(t).If(one).
-  Should().Be().Like(1)
-
-// Matches Order and Ranges
-it.Ok(t).
-  If(three).Should().Be().Less(10).
-  If(three).Should().Be().LessOrEqual(3).
-  If(three).Should().Be().Greater(1).
-  If(three).Should().Be().GreaterOrEqual(3).
-  If(three).Should().Be().In(1, 10)
+it.Then(t).
+  // Inline logical predicates
+  Should(it.True(x == y && x > 10)).
+  // Use closed function
+  Should(it.Be(func() bool { return x == y && x > 10})).
+  // X should be same type as Y
+  Should(it.SameAs(x, y)).
+  // X should be nil
+  Should(it.Nil(x))
 ```
+
+
+### Intercepts
+
+Intercept any failures in target code block. Intercepts supports actual panics and function that return of errors.
+
+```go
+func fWithPanic() {/* ... */}
+func fWithError() error {/* ... */}
+
+it.Then(t).
+  // Intercept panic in the code block
+  Should(it.Fail(fWithPanic)).
+  // Intercept error in the code block
+  Should(it.Fail(fWithError)).
+```
+
+Assert error for behavior to check the "type" of returned error
+
+```go
+var err interface { Timeout() }
+
+it.Then(t).
+  // Intercept panic in the code block and assert for behavior
+  Should(it.Fail(fWithPanic).With(&err)).
+  Should(it.Fail(fWithError).With(&err)).
+  //  Intercept panic in the code block and match the error code
+  Should(it.Fail(fWithError).Contain("error code"))
+```
+
+The `it.Fail` interceptor evaluates code block inside and it is limited to function that return single value. The `it.Error` interceptor captures returns of function.   
+
+```go
+func fNaryError() (string, error) {/* ... */}
+
+it.Then(t).
+  Should(it.Error(fNaryError())).
+  Should(it.Error(fNaryError()).With(&err)).
+  Should(it.Error(fNaryError()).Contain("error code"))
+```
+
+
+### Equality and identity
+
+Match unit test results with equality constraint.
+
+```go
+it.Then(t).
+  // X should be equal Y
+  Should(it.Equal(x, y))
+```
+
+### Ordering
+
+Compare unit test results with ordering constraint.
+
+```go
+it.Then(t).
+  // X should be less than Y
+  Should(it.Less(x, y)).
+  // X should be less or equal to Y
+  Should(it.LessOrEqual(x, y)).
+  // X should be greater than Y
+  Should(it.Greater(x, y)).
+  // X should be greater or equal to Y
+  Should(it.GreaterOrEqual(x, y)) 
+```
+
+
+### String matchers
+
+```go
+it.Then(t).
+  // String X should have prefix X
+  Should(it.String(x).HavePrefix(y)).
+  // String X should have suffix X
+  Should(it.String(x).HaveSuffix(y)).
+  // String X should contain X
+  Should(it.String(x).Contain(y)).
+```
+
+### Slices and Sequence matchers
+
+```go
+it.Then(t).
+  // Seq X should be empty
+  Should(it.Seq(x).BeEmpty(y)).
+  // Seq X should equal Y¹, ... Yⁿ
+  Should(it.Seq(x).Equal(y1, ..., yn))
+  // Seq X should contain Y
+  Should(it.Seq(x).Contain(y1, ..., yn))
+  // Seq X should contain one of Y
+  Should(it.Seq(x).Contain().OneOf(y1, ..., yn)).
+  // Seq X should contain all of Y
+  Should(it.Seq(x).Contain().AllOf(y1, ..., yn))
+```
+
+
+### Map matchers
+
+```go
+it.Then(t).
+  // Map X should have key K with value Y
+  Should(it.Map(X).Have(k, y)) 
+```
+
 
 ## How To Contribute
 
