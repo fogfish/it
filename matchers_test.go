@@ -53,7 +53,7 @@ func TestSeqContain(t *testing.T) {
 		Should(it.Seq(seq).Contain().AllOf(T{"b"}, T{"c"})).
 		ShouldNot(it.Seq(seq).Contain().AllOf(T{"b"}, T{"x"})).
 		Should(it.Seq(seq).Contain().OneOf(T{"x"}, T{"c"})).
-		ShouldNot(it.Seq(seq).Contain().AllOf(T{"y"}, T{"x"}))
+		ShouldNot(it.Seq(seq).Contain().OneOf(T{"y"}, T{"x"}))
 }
 
 func TestMapHave(t *testing.T) {

@@ -38,7 +38,7 @@ func True(x bool) error {
 // SameAs matches type of x, y
 //   it.Should(it.SameAs(x, y))
 func SameAs[T any](x, y T) error {
-	return nil
+	return passed(fmt.Errorf("type of %v same as %T", x, y))
 }
 
 // Nil asserts the variable for the nil value

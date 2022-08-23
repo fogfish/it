@@ -68,6 +68,11 @@ func TestError(t *testing.T) {
 		ShouldNot(it.Error(fNoError()))
 }
 
+func TestSameAs(t *testing.T) {
+	it.Then(t).
+		Should(it.SameAs("abc", "def"))
+}
+
 func TestNil(t *testing.T) {
 	it.Then(t).
 		Should(it.Nil(nil)).
