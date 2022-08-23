@@ -12,7 +12,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/fogfish/it"
+	"github.com/fogfish/it/v2"
 )
 
 func TestNewExpr(t *testing.T) {

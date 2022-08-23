@@ -3,7 +3,7 @@ package it_test
 import (
 	"testing"
 
-	"github.com/fogfish/it"
+	"github.com/fogfish/it/v2"
 )
 
 func TestStringPrefix(t *testing.T) {
