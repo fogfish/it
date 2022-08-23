@@ -14,8 +14,8 @@ func TestBe(t *testing.T) {
 
 func TestTrue(t *testing.T) {
 	it.Then(t).
-		Should(it.True(10 == 10)).
-		ShouldNot(it.True(10 > 10))
+		Should(it.True(true)).
+		ShouldNot(it.True(false))
 }
 
 type err string
