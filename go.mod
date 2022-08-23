@@ -1,3 +1,3 @@
-module github.com/fogfish/it
+module github.com/fogfish/it/v2
 
 go 1.18
