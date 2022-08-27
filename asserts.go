@@ -1,3 +1,11 @@
+//
+// Copyright (C) 2019 Dmitry Kolesnikov
+//
+// This file may be modified and distributed under the terms
+// of the MIT license.  See the LICENSE file for details.
+// https://github.com/fogfish/it
+//
+
 package it
 
 import (
@@ -172,6 +180,18 @@ func Equal[T comparable](x, y T) error {
 	return passed(assert)
 }
 
+// Equiv check equality (x ≈ y) of two non scalar variables
+//   it.Should(it.Equiv(x, y))
+func Equiv[T any](x, y T) error {
+	assert := fmt.Errorf("%v be equivalent to %v", x, y)
+
+	if !equal(x, y) {
+		return assert
+	}
+
+	return passed(assert)
+}
+
 // Orderable type constraint
 type Orderable interface {
 	~string |
@@ -233,7 +253,7 @@ func equal(a, b interface{}) bool {
 	// Note: reflect.DeepEqual uses type metadata to compare.
 	//       It would fail if nil value of pointer type is compared to nil literal
 	//       var v *MyType
-	//       it.Ok(t).If(v).Should().Equal(nil)
+	//       it.Then(t).If(v).Should().Equal(nil)
 	if isNul(a) && isNul(b) {
 		return true
 	}

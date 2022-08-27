@@ -1,3 +1,11 @@
+//
+// Copyright (C) 2019 Dmitry Kolesnikov
+//
+// This file may be modified and distributed under the terms
+// of the MIT license.  See the LICENSE file for details.
+// https://github.com/fogfish/it
+//
+
 package it_test
 
 import (
@@ -83,6 +91,16 @@ func TestEqual(t *testing.T) {
 	it.Then(t).
 		Should(it.Equal(1, 1)).
 		ShouldNot(it.Equal(1, 2))
+}
+
+func TestEquiv(t *testing.T) {
+	type T struct{ A string }
+
+	it.Then(t).
+		Should(it.Equiv(T{"A"}, T{"A"})).
+		Should(it.Equiv(&T{"A"}, &T{"A"})).
+		ShouldNot(it.Equiv(T{"A"}, T{"B"})).
+		ShouldNot(it.Equiv(&T{"A"}, &T{"B"}))
 }
 
 func TestLess(t *testing.T) {
