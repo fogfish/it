@@ -43,11 +43,17 @@ func TestImperativeKeywords(t *testing.T) {
 
 	mock = new(testing.T)
 	it.Then(mock).Should(success())
-	it.Then(t).ShouldNot(it.Be(mock.Failed))
+	it.Then(t).ShouldNot(
+		it.Be(mock.Failed),
+		it.Be(mock.Failed),
+	)
 
 	mock = new(testing.T)
 	it.Then(mock).Should(failure())
-	it.Then(t).Should(it.Be(mock.Failed))
+	it.Then(t).Should(
+		it.Be(mock.Failed),
+		it.Be(mock.Failed),
+	)
 
 	mock = new(testing.T)
 	it.Then(mock).May(success())
