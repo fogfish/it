@@ -19,7 +19,8 @@ import (
 //
 
 // Check type is constructor of imperative testing expressions.
-//   it.Ok(t).Should( ... )
+//
+//	it.Then(t).Should( ... )
 type Check struct {
 	t *testing.T // Note: intentionally hidden from clients
 }
@@ -34,21 +35,21 @@ func Ok(t *testing.T) *Check { return &Check{t} }
 // Must is imperative keyword.
 // The assert definition is an absolute requirement.
 // It terminates execution of tests if assert is failed.
-func (check *Check) Must(err error) *Check {
+func (check *Check) Must(errs ...error) *Check {
 	check.t.Helper()
 
-	if err == nil {
-		return check
-	}
+	for _, err := range errs {
+		if err != nil {
+			var e interface{ Passed() bool }
+			ok := errors.As(err, &e)
+			output := check.fatalf
 
-	var e interface{ Passed() bool }
-	ok := errors.As(err, &e)
-	output := check.fatalf
-
-	if ok && e.Passed() {
-		output = check.noticef
+			if ok && e.Passed() {
+				output = check.noticef
+			}
+			output("must %s", err)
+		}
 	}
-	output("must %s", err)
 
 	return check
 }
@@ -56,21 +57,21 @@ func (check *Check) Must(err error) *Check {
 // MustNot is imperative keyword.
 // The definition is an absolute prohibition
 // It terminates execution of tests if assert is not failed.
-func (check *Check) MustNot(err error) *Check {
+func (check *Check) MustNot(errs ...error) *Check {
 	check.t.Helper()
 
-	if err == nil {
-		return check
-	}
+	for _, err := range errs {
+		if err != nil {
+			var e interface{ Passed() bool }
+			ok := errors.As(err, &e)
+			output := check.fatalf
 
-	var e interface{ Passed() bool }
-	ok := errors.As(err, &e)
-	output := check.fatalf
-
-	if !(ok && e.Passed()) {
-		output = check.noticef
+			if !(ok && e.Passed()) {
+				output = check.noticef
+			}
+			output("must not %s", err)
+		}
 	}
-	output("must not %s", err)
 
 	return check
 }
@@ -79,21 +80,21 @@ func (check *Check) MustNot(err error) *Check {
 // The assert definition is a strongly recommended requirement.
 // However it's violation do not block continuation of testing.
 // The test fails if assert is failed.
-func (check *Check) Should(err error) *Check {
+func (check *Check) Should(errs ...error) *Check {
 	check.t.Helper()
 
-	if err == nil {
-		return check
-	}
+	for _, err := range errs {
+		if err != nil {
+			var e interface{ Passed() bool }
+			ok := errors.As(err, &e)
+			output := check.errorf
 
-	var e interface{ Passed() bool }
-	ok := errors.As(err, &e)
-	output := check.errorf
-
-	if ok && e.Passed() {
-		output = check.noticef
+			if ok && e.Passed() {
+				output = check.noticef
+			}
+			output("should %s", err)
+		}
 	}
-	output("should %s", err)
 
 	return check
 }
@@ -102,17 +103,21 @@ func (check *Check) Should(err error) *Check {
 // The assert definition is a strongly recommended prohibition.
 // However it's violation do not block continuation of testing.
 // The test fails if assert is not failed.
-func (check *Check) ShouldNot(err error) *Check {
+func (check *Check) ShouldNot(errs ...error) *Check {
 	check.t.Helper()
 
-	var e interface{ Passed() bool }
-	ok := errors.As(err, &e)
-	output := check.errorf
+	for _, err := range errs {
+		if err != nil {
+			var e interface{ Passed() bool }
+			ok := errors.As(err, &e)
+			output := check.errorf
 
-	if !(ok && e.Passed()) {
-		output = check.noticef
+			if !(ok && e.Passed()) {
+				output = check.noticef
+			}
+			output("should not %s", err)
+		}
 	}
-	output("should not %s", err)
 
 	return check
 }
@@ -121,21 +126,21 @@ func (check *Check) ShouldNot(err error) *Check {
 // Its violation do not impact on testing flow in anyway.
 // The informative warning message is produced to console if assert is failed.
 // Error message will be printed only if the test fails or the -test.v
-func (check *Check) May(err error) *Check {
+func (check *Check) May(errs ...error) *Check {
 	check.t.Helper()
 
-	if err == nil {
-		return check
-	}
+	for _, err := range errs {
+		if err != nil {
+			var e interface{ Passed() bool }
+			ok := errors.As(err, &e)
+			output := check.warningf
 
-	var e interface{ Passed() bool }
-	ok := errors.As(err, &e)
-	output := check.warningf
-
-	if ok && e.Passed() {
-		output = check.noticef
+			if ok && e.Passed() {
+				output = check.noticef
+			}
+			output("may %s", err)
+		}
 	}
-	output("may %s", err)
 
 	return check
 }
@@ -144,59 +149,56 @@ func (check *Check) May(err error) *Check {
 // Its violation do not impact on testing flow in anyway.
 // The informative warning message is produced to console if assert is not failed.
 // Error message will be printed only if the test fails or the -test.v
-func (check *Check) MayNot(err error) *Check {
+func (check *Check) MayNot(errs ...error) *Check {
 	check.t.Helper()
 
-	if err == nil {
-		return check
-	}
+	for _, err := range errs {
+		if err != nil {
+			var e interface{ Passed() bool }
+			ok := errors.As(err, &e)
+			output := check.warningf
 
-	var e interface{ Passed() bool }
-	ok := errors.As(err, &e)
-	output := check.warningf
-
-	if !(ok && e.Passed()) {
-		output = check.noticef
+			if !(ok && e.Passed()) {
+				output = check.noticef
+			}
+			output("may not %s", err)
+		}
 	}
-	output("may not %s", err)
 
 	return check
 }
 
 // Skip is imperative keyword
 // It ignores results of assert
-func (check *Check) Skip(err error) *Check {
+func (check *Check) Skip(errs ...error) *Check {
 	check.t.Helper()
-	check.debugf("skip %s", err)
+	for _, err := range errs {
+		check.debugf("skip %s", err)
+	}
 	return check
 }
 
-//
 func (check *Check) fatalf(msg string, args ...any) {
 	check.t.Helper()
 	check.t.Logf("\033[31m%s\033[0m", fmt.Sprintf(msg, args...))
 	panic(fmt.Errorf("stop testing"))
 }
 
-//
 func (check *Check) errorf(msg string, args ...any) {
 	check.t.Helper()
 	check.t.Errorf("\033[31m%s\033[0m", fmt.Sprintf(msg, args...))
 }
 
-//
 func (check *Check) warningf(msg string, args ...any) {
 	check.t.Helper()
 	check.t.Logf("\033[33m%s\033[0m", fmt.Sprintf(msg, args...))
 }
 
-//
 func (check *Check) noticef(msg string, args ...any) {
 	check.t.Helper()
 	check.t.Logf("\033[32m%s\033[0m", fmt.Sprintf(msg, args...))
 }
 
-//
 func (check *Check) debugf(msg string, args ...any) {
 	check.t.Helper()
 	check.t.Logf("%s", fmt.Sprintf(msg, args...))
