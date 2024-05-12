@@ -180,8 +180,7 @@ func (check *Check) Skip(errs ...error) *Check {
 
 func (check *Check) fatalf(msg string, args ...any) {
 	check.t.Helper()
-	check.t.Logf("\033[31m%s\033[0m", fmt.Sprintf(msg, args...))
-	panic(fmt.Errorf("stop testing"))
+	check.t.Fatalf("\033[31m%s\033[0m", fmt.Sprintf(msg, args...))
 }
 
 func (check *Check) errorf(msg string, args ...any) {
