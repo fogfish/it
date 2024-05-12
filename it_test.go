@@ -41,7 +41,7 @@ func TestImperativeKeywords(t *testing.T) {
 		it.Then(t).Should(it.Fail(
 			func() { it.Ok(mock).Must(failure()) },
 		))
-	}(0)
+	}()
 
 	mock = new(testing.T)
 	it.Then(mock).Should(success())
