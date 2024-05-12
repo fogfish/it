@@ -3,11 +3,11 @@
 The library implements a human-friendly syntax for assertions to validates correctness of your code. It's style allows to write BDD-like specifications: "X should Y", "A equals to B", etc.
 
 [![Documentation](https://pkg.go.dev/badge/github.com/fogfish/it)](https://pkg.go.dev/github.com/fogfish/it)
-[![Build Status](https://github.com/fogfish/it/workflows/build/badge.svg)](https://github.com/fogfish/it/actions/)
+[![Build Status](https://github.com/fogfish/it/workflows/test/badge.svg)](https://github.com/fogfish/it/actions/)
 [![Git Hub](https://img.shields.io/github/last-commit/fogfish/it.svg)](http://travis-ci.org/fogfish/it)
 [![Coverage Status](https://coveralls.io/repos/github/fogfish/it/badge.svg?branch=master)](https://coveralls.io/github/fogfish/it?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fogfish/it)](https://goreportcard.com/report/github.com/fogfish/it)
-[![Maintainability](https://api.codeclimate.com/v1/badges/d685a9d909983da3d2da/maintainability)](https://codeclimate.com/github/fogfish/it/maintainability)
+
 
 
 ## Inspiration
@@ -35,15 +35,21 @@ it.Then(t).
 
 ## Getting Started
 
-- [Getting Started](#getting-started)
-  - [Style](#style)
-  - [Assertions](#assertions)
-  - [Intercepts](#intercepts)
-  - [Equality and identity](#equality-and-identity)
-  - [Ordering](#ordering)
-  - [String matchers](#string-matchers)
-  - [Slices and Sequence matchers](#slices-and-sequence-matchers)
-  - [Map matchers](#map-matchers)
+- [It Should Be Tested.](#it-should-be-tested)
+  - [Inspiration](#inspiration)
+  - [Getting Started](#getting-started)
+    - [Style](#style)
+    - [Assertions](#assertions)
+    - [Intercepts](#intercepts)
+    - [Equality and identity](#equality-and-identity)
+    - [Ordering](#ordering)
+    - [String matchers](#string-matchers)
+    - [Slices and Sequence matchers](#slices-and-sequence-matchers)
+    - [Map matchers](#map-matchers)
+  - [How To Contribute](#how-to-contribute)
+    - [commit message](#commit-message)
+    - [bugs](#bugs)
+  - [License](#license)
 
 The latest version of the library is available at its `main` branch. All development, including new features and bug fixes, take place on the `main` branch using forking and pull requests as described in contribution guidelines. The stable version is available via Golang modules.
 
