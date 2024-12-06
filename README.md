@@ -155,9 +155,14 @@ it.Then(t).
 Match unit test results with equality constraint.
 
 ```go
-it.Then(t).
-  // X should be equal Y
-  Should(it.Equal(x, y))
+it.Then(t).Should(
+  // X should be equal Y (equal support only scalar types)
+  it.Equal(x, y),
+  // X should be equivalent Y (supports any product types)
+  it.Equiv(x, y),
+  // X should be like Y (if one of value is interface)
+  it.Like(x, y),
+)
 ```
 
 ### Ordering
