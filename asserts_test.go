@@ -81,6 +81,12 @@ func TestSameAs(t *testing.T) {
 		Should(it.SameAs("abc", "def"))
 }
 
+func TestType(t *testing.T) {
+	it.Then(t).Should(
+		it.TypeOf[string]("x"),
+	)
+}
+
 func TestNil(t *testing.T) {
 	it.Then(t).
 		Should(it.Nil(nil)).
@@ -101,6 +107,16 @@ func TestEquiv(t *testing.T) {
 		Should(it.Equiv(&T{"A"}, &T{"A"})).
 		ShouldNot(it.Equiv(T{"A"}, T{"B"})).
 		ShouldNot(it.Equiv(&T{"A"}, &T{"B"}))
+}
+
+func TestLike(t *testing.T) {
+	type T struct{ A string }
+
+	it.Then(t).
+		Should(it.Like(T{"A"}, T{"A"})).
+		Should(it.Like(&T{"A"}, &T{"A"})).
+		ShouldNot(it.Like(T{"A"}, T{"B"})).
+		ShouldNot(it.Like(&T{"A"}, &T{"B"}))
 }
 
 func TestLess(t *testing.T) {

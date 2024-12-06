@@ -52,6 +52,16 @@ func SameAs[T any](x, y T) error {
 	return passed(fmt.Errorf("type of %v same as %T", x, y))
 }
 
+// Matches TypeOf of value
+func TypeOf[T any](x any) error {
+	switch v := x.(type) {
+	case T:
+		return passed(fmt.Errorf("%v of type %T", v, v))
+	default:
+		return fmt.Errorf("%v of type %T", v, *new(T))
+	}
+}
+
 // Nil asserts the variable for the nil value
 //
 //	it.Should(it.Nil(x))
@@ -198,6 +208,23 @@ func Equiv[T any](x, y T) error {
 	}
 
 	return passed(assert)
+}
+
+// Equiv check equality (x ≈ y) of two non scalar variables
+//
+//	it.Should(it.Like(x, y))
+func Like[T any](x any, y T) error {
+	assert := fmt.Errorf("%v be equivalent to %v", x, y)
+
+	switch v := x.(type) {
+	case T:
+		if !equal(v, y) {
+			return assert
+		}
+		return passed(assert)
+	default:
+		return assert
+	}
 }
 
 // Orderable type constraint
