@@ -54,11 +54,13 @@ func SameAs[T any](x, y T) error {
 
 // Matches TypeOf of value
 func TypeOf[T any](x any) error {
-	switch v := x.(type) {
+	assert := fmt.Errorf("%v of type %T", x, *new(T))
+
+	switch x.(type) {
 	case T:
-		return passed(fmt.Errorf("%v of type %T", v, v))
+		return passed(assert)
 	default:
-		return fmt.Errorf("%v of type %T", v, *new(T))
+		return assert
 	}
 }
 
