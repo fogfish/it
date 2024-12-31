@@ -234,6 +234,9 @@ The matcher checks expected value against string pattern. It takes a valid JSON 
 // matches array of length 1 
 `["_"]`
 
+// matches array of any length with head element equal to "example.com"
+`["example", "..."]`
+
 // matches any object with key "site" equal to "example.com"
 `{"site": "example.com"}`
 

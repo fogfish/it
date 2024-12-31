@@ -238,13 +238,22 @@ func diffVal(pat, val any) any {
 		return nil
 	case []any:
 		pp, ok := pat.([]any)
-		if !ok || len(pp) != len(vv) {
+		if !ok {
 			return diff{expect: pat, actual: val}
 		}
+
+		// || len(pp) != len(vv)
 
 		add := make([]any, 0)
 		sub := make([]any, 0)
 		for i, vvx := range vv {
+			if len(pp)-1 < i {
+				sub = append(add, vv[i:])
+				break
+			}
+			if pp[i] == "..." {
+				break
+			}
 			if dv := diffVal(pp[i], vvx); dv != nil {
 				kv := dv.(diff)
 				if kv.actual != nil {
