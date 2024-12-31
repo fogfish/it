@@ -46,6 +46,7 @@ it.Then(t).
     - [String matchers](#string-matchers)
     - [Slices and Sequence matchers](#slices-and-sequence-matchers)
     - [Map matchers](#map-matchers)
+    - [JSON matchers](#json-matchers)
   - [How To Contribute](#how-to-contribute)
     - [commit message](#commit-message)
     - [bugs](#bugs)
@@ -219,6 +220,40 @@ it.Then(t).
   Should(it.Map(X).Have(k, y)) 
 ```
 
+### JSON matchers
+
+The matcher checks expected value against string pattern. It takes a valid JSON as string and compare it against input object. It matches only defined values and supports wildcard matching. For example:
+
+```go
+// matches anything
+`"_"`
+
+// matches any object with key "site"
+`{"site": "_"}`
+
+// matches array of length 1 
+`["_"]`
+
+// matches array of any length with head element equal to "example.com"
+`["example", "..."]`
+
+// matches any object with key "site" equal to "example.com"
+`{"site": "example.com"}`
+
+// matches any array of length 2 with first object having the key 
+`[{"site": "_"}, "_"]`
+
+// matches nested objects
+`{"site": {"host": "_"}}`
+```
+
+```go
+it.Then(t).Should(
+  it.Json(obj).Equiv(`{
+    "foo": "bar"
+  }`)
+)
+```
 
 ## How To Contribute
 
