@@ -242,8 +242,6 @@ func diffVal(pat, val any) any {
 			return diff{expect: pat, actual: val}
 		}
 
-		// || len(pp) != len(vv)
-
 		add := make([]any, 0)
 		sub := make([]any, 0)
 		for i, vvx := range vv {
