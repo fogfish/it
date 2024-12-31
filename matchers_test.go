@@ -74,3 +74,52 @@ func TestMapHave(t *testing.T) {
 		ShouldNot(it.Map(set).Have(101, T{"a"})).
 		ShouldNot(it.Map(set).Have(200, T{"a"}))
 }
+
+func TestJson(t *testing.T) {
+	type S []string
+	type M map[string]any
+	t.Run("Success", func(t *testing.T) {
+		for pat, val := range map[string]any{
+			`"_"`:                   "foo",
+			`"foo"`:                 "foo",
+			`10`:                    10,
+			`10.33`:                 10.33,
+			`true`:                  true,
+			`["foo", "bar"]`:        S{"foo", "bar"},
+			`["_", "bar"]`:          S{"foo", "bar"},
+			`{"foo": "bar"}`:        M{"foo": "bar"},
+			`{"foo": "_"}`:          M{"foo": "bar"},
+			`{"foo": ["bar"]}`:      M{"foo": S{"bar"}},
+			`{"foo": ["_"]}`:        M{"foo": S{"bar"}},
+			`{"foo": {"bar": "f"}}`: M{"foo": M{"bar": "f"}},
+		} {
+			mock := new(testing.T)
+			it.Ok(mock).Should(
+				it.Json(val).Equiv(pat),
+			)
+			it.Then(t).ShouldNot(it.Be(mock.Failed))
+		}
+	})
+
+	t.Run("Failed", func(t *testing.T) {
+		for pat, val := range map[string]any{
+			`"foo"`:                 "xfoo",
+			`10`:                    100,
+			`10.33`:                 100.33,
+			`true`:                  false,
+			`["foo", "bar"]`:        S{"foo", "xbar"},
+			`["_", "bar"]`:          S{"foo", "xbar"},
+			`{"foo": "bar"}`:        M{"foo": "xbar"},
+			`{"foo": "_"}`:          M{"xfoo": "bar"},
+			`{"foo": ["bar"]}`:      M{"foo": S{"xbar"}},
+			`{"foo": ["_"]}`:        M{"xfoo": S{"bar"}},
+			`{"foo": {"bar": "f"}}`: M{"foo": M{"bar": "xf"}},
+		} {
+			mock := new(testing.T)
+			it.Ok(mock).Should(
+				it.Json(val).Equiv(pat),
+			)
+			it.Then(t).Should(it.Be(mock.Failed))
+		}
+	})
+}

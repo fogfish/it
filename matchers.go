@@ -9,6 +9,7 @@
 package it
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -168,4 +169,193 @@ func (xs MapOf[K, V]) Have(key K, y V) error {
 	}
 
 	return passed(assert)
+}
+
+//
+// Json
+//
+
+type JsonOf[A any] struct{ obj A }
+
+func Json[A any](obj A) JsonOf[A] {
+	return JsonOf[A]{obj: obj}
+}
+
+func (obj JsonOf[A]) Equiv(pattern string) error {
+	var pat, val any
+	if err := json.Unmarshal([]byte(pattern), &pat); err != nil {
+		return fmt.Errorf("pattern be valid JSON")
+	}
+
+	raw, err := json.Marshal(obj.obj)
+	if err != nil {
+		panic(fmt.Errorf("invalid object: %w", err))
+	}
+	if err := json.Unmarshal([]byte(raw), &val); err != nil {
+		panic(fmt.Errorf("invalid object: %w", err))
+	}
+
+	dv := diffVal(pat, val)
+	if dv != nil {
+		var sb strings.Builder
+		p := newPrinter(&sb)
+		p.print("", dv)
+
+		return fmt.Errorf("be matching\n%s", sb.String())
+	}
+
+	return passed(fmt.Errorf("be matching"))
+}
+
+type diff struct {
+	expect any // -
+	actual any // +
+}
+
+func diffVal(pat, val any) any {
+	if pp, ok := pat.(string); ok && pp == "_" {
+		return nil
+	}
+
+	switch vv := val.(type) {
+	case string:
+		pp, ok := pat.(string)
+		if !ok || vv != pp {
+			return diff{expect: pat, actual: val}
+		}
+		return nil
+	case float64:
+		pp, ok := pat.(float64)
+		if !ok || vv != pp {
+			return diff{expect: pat, actual: val}
+		}
+		return nil
+	case bool:
+		pp, ok := pat.(bool)
+		if !ok || vv != pp {
+			return diff{expect: pat, actual: val}
+		}
+		return nil
+	case []any:
+		pp, ok := pat.([]any)
+		if !ok || len(pp) != len(vv) {
+			return diff{expect: pat, actual: val}
+		}
+
+		add := make([]any, 0)
+		sub := make([]any, 0)
+		for i, vvx := range vv {
+			if dv := diffVal(pp[i], vvx); dv != nil {
+				kv := dv.(diff)
+				if kv.actual != nil {
+					add = append(add, kv.actual)
+				}
+				if kv.expect != nil {
+					sub = append(sub, kv.expect)
+				}
+			}
+		}
+
+		if len(add) != 0 || len(sub) != 0 {
+			return diff{expect: sub, actual: add}
+		}
+
+		return nil
+	case map[string]any:
+		pp, ok := pat.(map[string]any)
+		if !ok {
+			return diff{expect: pat, actual: val}
+		}
+		return diffMap(pp, vv)
+	}
+
+	return nil
+}
+
+func diffMap(pat, val map[string]any) any {
+	d := make(map[string]any)
+
+	for k, p := range pat {
+		v, has := val[k]
+		if !has {
+			d[k] = diff{expect: p}
+		}
+
+		if dv := diffVal(p, v); dv != nil {
+			d[k] = dv
+		}
+	}
+
+	if len(d) != 0 {
+		return d
+	}
+
+	return nil
+}
+
+//------------------------------------------------------------------------------
+
+type printer struct {
+	sb *strings.Builder
+}
+
+func newPrinter(sb *strings.Builder) printer {
+	sb.WriteString("\x1b[0m")
+	return printer{sb: sb}
+}
+
+func (p printer) atos(v any) string {
+	b, _ := json.Marshal(v)
+	return string(b)
+}
+
+func (p printer) value(sign, indent string, key string, v any) {
+	p.sb.WriteString(fmt.Sprintf("%s %s", sign, indent))
+	if key != "" {
+		p.sb.WriteString(fmt.Sprintf("\"%s\": ", key))
+	}
+	p.sb.WriteString(p.atos(v))
+}
+
+func (p printer) diff(indent string, key string, v diff) {
+	if v.expect != nil {
+		if v.actual == nil {
+			p.sb.WriteString("\x1b[1;43m")
+		} else {
+			p.sb.WriteString("\x1b[1;33m")
+		}
+		p.value("-", indent, key, v.expect)
+		p.sb.WriteString("\x1b[0m")
+		p.sb.WriteString("\n")
+	}
+
+	if v.actual != nil {
+		p.sb.WriteString("\x1b[1;41m")
+		p.value("+", indent, key, v.actual)
+		p.sb.WriteString("\x1b[0m")
+		p.sb.WriteString("\n")
+	}
+}
+
+func (p printer) print(indent string, val any) {
+	switch obj := val.(type) {
+	case diff:
+		p.diff(indent, "", obj)
+	case map[string]any:
+		p.sb.WriteString("  {\n")
+		for k, v := range obj {
+			switch vv := v.(type) {
+			case diff:
+				p.sb.WriteString("\n")
+				p.diff(indent+"  ", k, vv)
+				p.sb.WriteString("\n")
+			default:
+				p.sb.WriteString(fmt.Sprintf("  %s\"%s\": ", indent+"  ", k))
+				p.print(indent+"  ", v)
+			}
+			p.sb.WriteString(fmt.Sprintf("  %s}\n", indent))
+		}
+	default:
+		p.sb.WriteString(p.atos(obj))
+	}
 }
