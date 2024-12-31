@@ -189,10 +189,10 @@ func (obj JsonOf[A]) Equiv(pattern string) error {
 
 	raw, err := json.Marshal(obj.obj)
 	if err != nil {
-		panic(fmt.Errorf("invalid object: %w", err))
+		return fmt.Errorf("input be valid JSON")
 	}
 	if err := json.Unmarshal([]byte(raw), &val); err != nil {
-		panic(fmt.Errorf("invalid object: %w", err))
+		return fmt.Errorf("input be valid JSON")
 	}
 
 	dv := diffVal(pat, val)
