@@ -228,6 +228,9 @@ The matcher checks expected value against string pattern. It takes a valid JSON 
 // matches anything
 `"_"`
 
+// match string to regular expression
+`"m/example/"` 
+
 // matches any object with key "site"
 `{"site": "_"}`
 
