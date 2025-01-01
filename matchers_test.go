@@ -106,9 +106,12 @@ func TestJson(t *testing.T) {
 	t.Run("Failed", func(t *testing.T) {
 		for pat, val := range map[string]any{
 			`"foo"`:                 "xfoo",
+			`"bar"`:                 100,
 			`10`:                    100,
 			`10.33`:                 100.33,
+			`100`:                   "100",
 			`true`:                  false,
+			`false`:                 "false",
 			`["foo"]`:               S{"foo", "xbar"},
 			`["foo", "bar"]`:        S{"foo", "xbar"},
 			`["_", "bar"]`:          S{"foo", "xbar"},
