@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -181,12 +182,8 @@ func Json[A any](obj A) JsonOf[A] {
 	return JsonOf[A]{obj: obj}
 }
 
-func (obj JsonOf[A]) Equiv(pattern string) error {
-	var pat, val any
-	if err := json.Unmarshal([]byte(pattern), &pat); err != nil {
-		return fmt.Errorf("pattern be valid JSON")
-	}
-
+func (obj JsonOf[A]) Equiv(shapes ...string) error {
+	var val any
 	raw, err := json.Marshal(obj.obj)
 	if err != nil {
 		return fmt.Errorf("input be valid JSON")
@@ -195,13 +192,20 @@ func (obj JsonOf[A]) Equiv(pattern string) error {
 		return fmt.Errorf("input be valid JSON")
 	}
 
-	dv := diffVal(pat, val)
-	if dv != nil {
-		var sb strings.Builder
-		p := newPrinter(&sb)
-		p.print("", dv)
+	for _, shape := range shapes {
+		var pat any
+		if err := json.Unmarshal([]byte(shape), &pat); err != nil {
+			return fmt.Errorf("pattern be valid JSON")
+		}
 
-		return fmt.Errorf("be matching\n%s", sb.String())
+		dv := diffVal(pat, val)
+		if dv != nil {
+			var sb strings.Builder
+			p := newPrinter(&sb)
+			p.print("", dv)
+
+			return fmt.Errorf("be matching\n%s", sb.String())
+		}
 	}
 
 	return passed(fmt.Errorf("be matching"))
@@ -220,9 +224,18 @@ func diffVal(pat, val any) any {
 	switch vv := val.(type) {
 	case string:
 		pp, ok := pat.(string)
-		if !ok || vv != pp {
+		if !ok {
 			return diff{expect: pat, actual: val}
 		}
+		if strings.HasPrefix(pp, "m/") && pp[len(pp)-1] == '/' {
+			re := regexp.MustCompile(pp[2 : len(pp)-1])
+			if !re.MatchString(vv) {
+				return diff{expect: pat, actual: val}
+			}
+		} else if vv != pp {
+			return diff{expect: pat, actual: val}
+		}
+
 		return nil
 	case float64:
 		pp, ok := pat.(float64)
