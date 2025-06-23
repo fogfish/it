@@ -287,6 +287,12 @@ func diffVal(pat, val any) any {
 			return diff{expect: pat, actual: val}
 		}
 		return diffMap(pp, vv)
+	case nil:
+		if pat == nil {
+			return nil
+		}
+
+		return diff{expect: pat, actual: val}
 	}
 
 	return nil

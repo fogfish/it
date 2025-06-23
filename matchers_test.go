@@ -80,6 +80,7 @@ func TestJson(t *testing.T) {
 	type M map[string]any
 	t.Run("Success", func(t *testing.T) {
 		for pat, val := range map[string]any{
+			`null`:                  nil,
 			`"_"`:                   "foo",
 			`"foo"`:                 "foo",
 			`10`:                    10,
@@ -105,6 +106,7 @@ func TestJson(t *testing.T) {
 
 	t.Run("Failed", func(t *testing.T) {
 		for pat, val := range map[string]any{
+			`null`:                  "xfoo",
 			`"foo"`:                 "xfoo",
 			`"bar"`:                 100,
 			`10`:                    100,
@@ -115,6 +117,7 @@ func TestJson(t *testing.T) {
 			`["foo"]`:               S{"foo", "xbar"},
 			`["foo", "bar"]`:        S{"foo", "xbar"},
 			`["_", "bar"]`:          S{"foo", "xbar"},
+			`["_"]`:                 nil,
 			`{"foo": "bar"}`:        M{"foo": "xbar"},
 			`{"foo": "m/^bar/"}`:    M{"foo": "xbar"},
 			`{"foo": "_"}`:          M{"xfoo": "bar"},
