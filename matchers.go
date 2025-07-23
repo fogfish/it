@@ -227,10 +227,15 @@ func diffVal(pat, val any) any {
 		if !ok {
 			return diff{expect: pat, actual: val}
 		}
-		if strings.HasPrefix(pp, "m/") && pp[len(pp)-1] == '/' {
+		if strings.HasPrefix(pp, "regex:") {
+			re := regexp.MustCompile(pp[6:])
+			if !re.MatchString(vv) {
+				return diff{expect: pp[6:], actual: val}
+			}
+		} else if strings.HasPrefix(pp, "m/") && pp[len(pp)-1] == '/' {
 			re := regexp.MustCompile(pp[2 : len(pp)-1])
 			if !re.MatchString(vv) {
-				return diff{expect: pat, actual: val}
+				return diff{expect: pp[2 : len(pp)-1], actual: val}
 			}
 		} else if vv != pp {
 			return diff{expect: pat, actual: val}
