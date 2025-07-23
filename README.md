@@ -229,7 +229,7 @@ The matcher checks expected value against string pattern. It takes a valid JSON 
 `"_"`
 
 // match string to regular expression
-`"m/example/"` 
+`"regex:example"` 
 
 // matches any object with key "site"
 `{"site": "_"}`
