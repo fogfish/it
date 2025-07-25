@@ -8,11 +8,6 @@ on:
       - opened
       - synchronize
 
-  push:
-    branches:
-      - main
-      - /refs/heads/main
-
 jobs:
 
   unit:
@@ -23,7 +18,7 @@ jobs:
         with:
           go-version: "1.22"
 
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v4
      
       - name: go build
         run: |

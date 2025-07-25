@@ -271,12 +271,16 @@ func diffVal(pat, val any) any {
 				break
 			}
 			if dv := diffVal(pp[i], vvx); dv != nil {
-				kv := dv.(diff)
-				if kv.actual != nil {
-					add = append(add, kv.actual)
-				}
-				if kv.expect != nil {
-					sub = append(sub, kv.expect)
+				switch v := dv.(type) {
+				case diff:
+					if v.actual != nil {
+						add = append(add, v.actual)
+					}
+					if v.expect != nil {
+						sub = append(sub, v.expect)
+					}
+				case map[string]any:
+					return v
 				}
 			}
 		}
